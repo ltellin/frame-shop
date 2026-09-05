@@ -351,7 +351,6 @@ def _summary(spec: DesignSpec, exploded: dict) -> dict:
     return {
         "finished_width_in": bounds["width_in"],
         "finished_height_in": bounds["height_in"],
-        "united_in": round(bounds["width_in"] + bounds["height_in"], 2),
         "base_width_in": float(spec.base_width_in),
         "base_height_in": float(spec.base_height_in),
         "quantity": spec.quantity,

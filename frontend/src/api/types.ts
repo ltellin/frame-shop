@@ -92,7 +92,6 @@ export type DesignArt = {
 export type DesignSummary = {
   finished_width_in: number
   finished_height_in: number
-  united_in: number
   base_width_in: number
   base_height_in: number
   quantity: number

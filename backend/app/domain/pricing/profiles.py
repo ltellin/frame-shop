@@ -130,17 +130,19 @@ class PlaceholderProfile:
         )
 
     def _price_mat(self, layer: LayerView, product: ProductResolution | None) -> LayerPrice:
-        united = layer.geometry.self_size.united_in
+        size = layer.geometry.self_size
+        combined = size.width_in + size.height_in
         if product and product.price_uom == "per_united_in":
             rate = _cents_dec(product.unit_price_cents)
             src = product.name
         else:
             rate = self.MAT_PER_UNITED_IN
             src = "placeholder rate"
-        amount = united * rate + self.MAT_CUT_FEE
+        amount = combined * rate + self.MAT_CUT_FEE
         return LayerPrice(
             to_cents(amount),
-            f"{united:.1f} united in @ ${rate:.2f} + ${self.MAT_CUT_FEE:.0f} cut ({src})",
+            f"({size.width_in:.0f}+{size.height_in:.0f}) in @ ${rate:.2f} "
+            f"+ ${self.MAT_CUT_FEE:.0f} cut ({src})",
         )
 
     def _price_fillet(self, layer: LayerView, product: ProductResolution | None) -> LayerPrice:

@@ -76,16 +76,18 @@ export function Schematic() {
               onClick={() => layer.componentId != null && select(layer.componentId)}
             >
               <polyline points={layer.leader} fill="none" stroke="var(--hair)" strokeWidth={1} />
-              <polygon
-                points={layer.outline}
+              <path
+                d={layer.outline}
+                fillRule={layer.ring ? 'evenodd' : 'nonzero'}
                 fill={layer.color}
                 fillOpacity={layer.kind === 'glazing' ? 0.4 : 0.92}
                 stroke={active ? 'var(--accent)' : 'rgba(0,0,0,0.35)'}
                 strokeWidth={active ? 3 : 1}
               />
               {layer.customerSupplied && (
-                <polygon
-                  points={layer.outline}
+                <path
+                  d={layer.outline}
+                  fillRule={layer.ring ? 'evenodd' : 'nonzero'}
                   fill="url(#com-hatch)"
                   stroke="none"
                   pointerEvents="none"

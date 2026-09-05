@@ -34,7 +34,7 @@ def test_mat_then_moulding_accumulates_size():
     breakdown = price_design(design)
     assert [line.kind for line in breakdown.lines] == ["moulding", "mat", "fee"]
     mat_line = next(line for line in breakdown.lines if line.kind == "mat")
-    # mat self size 20x24 -> 44 united in * 0.35 + 12 cut = 27.40
+    # mat self size 20x24 -> (20 + 24) * 0.35 + 12 cut = 27.40
     assert mat_line.amount_cents == 2740
 
 

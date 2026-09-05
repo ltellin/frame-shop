@@ -11,8 +11,9 @@ export type PlacedLayer = {
   color: string
   labelText: string
   customerSupplied: boolean
-  outline: string // polygon points for the layer face
-  opening: string | null // polygon points for the visible window, if any
+  outline: string // SVG path `d` for the layer face (a ring for frame-type layers)
+  ring: boolean // outline has an inner subpath — render with fill-rule evenodd
+  opening: string | null // polygon points for a drawn window (non-ring layers, e.g. mat)
   labelAnchor: { x: number; y: number }
   leader: string // polyline points from layer to its label
   z: number
@@ -33,17 +34,23 @@ const GAP_X = 12 // slight horizontal drift; back layers sit to the right
 const VIEW_ANGLE_DEG = 10
 const FACE_SCALE = Math.sin((VIEW_ANGLE_DEG * Math.PI) / 180) // vertical foreshortening
 const LEAN = 1.6 // sideways shift of the far (top) edge, as a multiple of the face's screen height
-const MIN_OPENING_H = 6 // px — keep mat windows visible at a shallow angle
+const MIN_OPENING_H = 6 // px — keep drawn windows visible at a shallow angle
+const RING_BORDER_X = 4 // px — min visible frame border, left/right
+const RING_BORDER_Y = 3 // px — min visible frame border, top/bottom
 const LABEL_GUTTER = 210
 const MAX_LAYER_W = 180 // px cap for the widest layer
 const MAX_LABEL = 26
+
+const RING_ROLES = new Set(['frame', 'fillet'])
 
 function trim(s: string): string {
   return s.length > MAX_LABEL ? s.slice(0, MAX_LABEL - 1) + '…' : s
 }
 
 export function buildSchematic(layout: ExplodedLayout): SchematicModel {
-  const ordered = [...layout.layers].sort((a, b) => a.z_index - b.z_index)
+  // Frontmost (highest z_index — the frame) is drawn at the top; backing sits at
+  // the bottom, artwork low in the stack.
+  const ordered = [...layout.layers].sort((a, b) => b.z_index - a.z_index)
   const n = ordered.length || 1
   const bounds = layout.bounds
 
@@ -56,32 +63,35 @@ export function buildSchematic(layout: ExplodedLayout): SchematicModel {
     const faceH = layer.height_in * scale * FACE_SCALE
     const skew = faceH * LEAN
 
-    // Frontmost layer (highest z) sits lowest / leftmost; backmost highest / right.
-    const fromFront = n - 1 - i
-    const x = PAD + fromFront * GAP_X
+    const x = PAD + i * GAP_X
     const y = PAD + i * GAP_Y
 
-    const outline = poly([
+    // Outer face parallelogram, corners TL, TR, BR, BL (top edge sheared right).
+    const face: [number, number][] = [
       [x + skew, y],
       [x + skew + w, y],
       [x + w, y + faceH],
       [x, y + faceH],
-    ])
+    ]
 
+    const hasWindow = !!(layer.opening_width_in && layer.opening_height_in)
+    const ring = RING_ROLES.has(layer.layer_role) && hasWindow
+
+    let outline: string
     let opening: string | null = null
-    if (layer.opening_width_in && layer.opening_height_in) {
-      const ow = layer.opening_width_in * scale
-      const oh = Math.max(layer.opening_height_in * scale * FACE_SCALE, MIN_OPENING_H)
-      const os = oh * LEAN
-      const ox = x + (w - ow) / 2
-      const cyTop = y + faceH / 2 - oh / 2
-      const cyBot = y + faceH / 2 + oh / 2
-      opening = poly([
-        [ox + os, cyTop],
-        [ox + os + ow, cyTop],
-        [ox + ow, cyBot],
-        [ox, cyBot],
-      ])
+
+    if (ring) {
+      // Punch a hole so it reads as an empty frame.
+      const ow = clamp(layer.opening_width_in! * scale, w * 0.4, w - 2 * RING_BORDER_X)
+      const oh = clamp(layer.opening_height_in! * scale * FACE_SCALE, faceH * 0.4, faceH - 2 * RING_BORDER_Y)
+      outline = pathD(face) + ' ' + pathD(centeredParallelogram(x, y, w, faceH, ow, oh))
+    } else {
+      outline = pathD(face)
+      if (hasWindow) {
+        const ow = layer.opening_width_in! * scale
+        const oh = Math.max(layer.opening_height_in! * scale * FACE_SCALE, MIN_OPENING_H)
+        opening = poly(centeredParallelogram(x, y, w, faceH, ow, oh))
+      }
     }
 
     const labelAnchor = { x: VIEW_W - LABEL_GUTTER + 8, y: y + faceH / 2 }
@@ -98,6 +108,7 @@ export function buildSchematic(layout: ExplodedLayout): SchematicModel {
       labelText: trim(layer.label),
       customerSupplied: layer.provenance === 'customer' && layer.kind !== 'artwork',
       outline,
+      ring,
       opening,
       labelAnchor,
       leader,
@@ -106,6 +117,36 @@ export function buildSchematic(layout: ExplodedLayout): SchematicModel {
   })
 
   return { width: VIEW_W, height, layers }
+}
+
+// A parallelogram of size ow x oh, centred in the w x faceH face at (x, y),
+// sheared to match the face.
+function centeredParallelogram(
+  x: number,
+  y: number,
+  w: number,
+  faceH: number,
+  ow: number,
+  oh: number,
+): [number, number][] {
+  const ox = x + (w - ow) / 2
+  const os = oh * LEAN
+  const top = y + faceH / 2 - oh / 2
+  const bot = y + faceH / 2 + oh / 2
+  return [
+    [ox + os, top],
+    [ox + os + ow, top],
+    [ox + ow, bot],
+    [ox, bot],
+  ]
+}
+
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v))
+}
+
+function pathD(points: [number, number][]): string {
+  return points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${round(x)},${round(y)}`).join(' ') + ' Z'
 }
 
 function poly(points: [number, number][]): string {

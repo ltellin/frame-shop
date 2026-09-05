@@ -12,10 +12,6 @@ export function SizeReadout() {
           {round(s.finished_width_in)}″ × {round(s.finished_height_in)}″
         </strong>
       </div>
-      <div>
-        <span className="muted">United inches</span>
-        <strong>{round(s.united_in)}″</strong>
-      </div>
       {s.quantity > 1 && (
         <div>
           <span className="muted">Quantity</span>
