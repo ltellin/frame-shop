@@ -27,7 +27,12 @@ def list_customers(session: Session = Depends(get_session)) -> list[dict]:
 @router.post("", response_model=CustomerRead, status_code=201)
 def create_customer(body: CustomerCreate, session: Session = Depends(get_session)):
     customer = order_service.create_customer(
-        session, name=body.name, phone=body.phone, email=body.email, notes=body.notes
+        session,
+        name=body.name,
+        phone=body.phone,
+        email=body.email,
+        notes=body.notes,
+        is_trade=body.is_trade,
     )
     session.commit()
     return customer

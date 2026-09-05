@@ -9,20 +9,19 @@ import {
 } from 'react'
 import type { ReactNode } from 'react'
 import { api } from '../api/client'
-import type { ComponentInput, DesignComponent, DesignRead } from '../api/types'
-
-// --- helpers -------------------------------------------------------------
+import type { ComponentInput, DesignComponent, DesignRead, Provenance } from '../api/types'
 
 function toInputs(components: DesignComponent[]): ComponentInput[] {
   const indexById = new Map(components.map((c, i) => [c.id, i]))
   return components.map((c) => ({
-    id: c.id < 0 ? undefined : c.id, // negative id = not yet persisted
+    id: c.id < 0 ? undefined : c.id,
     kind: c.kind,
     params: c.params,
     layer_role: c.layer_role,
     product_id: c.product_id,
+    provenance: c.provenance,
     parent_index:
-      c.parent_component_id != null ? indexById.get(c.parent_component_id) ?? null : null,
+      c.parent_component_id != null ? (indexById.get(c.parent_component_id) ?? null) : null,
   }))
 }
 
@@ -36,12 +35,13 @@ function blankComponent(kind: string, layerRole: string): DesignComponent {
     layer_role: layerRole,
     params: {},
     product_id: null,
+    provenance: 'shop',
     parent_component_id: null,
     product: null,
   }
 }
 
-// --- context -----------------------------------------------------------
+type FieldPatch = Record<string, unknown>
 
 type EditorValue = {
   design: DesignRead | null
@@ -55,8 +55,9 @@ type EditorValue = {
   moveComponent: (id: number, dir: -1 | 1) => void
   updateParams: (id: number, params: Record<string, unknown>) => void
   setProduct: (id: number, productId: number | null) => void
-  updateArtwork: (patch: Record<string, unknown>) => void
-  setStatus: (status: string) => void
+  setProvenance: (id: number, provenance: Provenance) => void
+  patchFields: (patch: FieldPatch) => Promise<void>
+  reload: () => Promise<void>
 }
 
 const Ctx = createContext<EditorValue | null>(null)
@@ -77,17 +78,24 @@ export function DesignEditorProvider({
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const latestComponents = useRef<DesignComponent[] | null>(null)
 
+  const reload = useCallback(async () => {
+    setLoading(true)
+    try {
+      setDesign(await api.getDesign(designId))
+      setError(null)
+    } catch (e) {
+      setError(String((e as Error).message ?? e))
+    } finally {
+      setLoading(false)
+    }
+  }, [designId])
+
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     api
       .getDesign(designId)
-      .then((d) => {
-        if (!cancelled) {
-          setDesign(d)
-          setError(null)
-        }
-      })
+      .then((d) => !cancelled && (setDesign(d), setError(null)))
       .catch((e) => !cancelled && setError(String(e.message ?? e)))
       .finally(() => !cancelled && setLoading(false))
     return () => {
@@ -106,11 +114,10 @@ export function DesignEditorProvider({
       setError(null)
     } catch (e) {
       setError(String((e as Error).message ?? e))
-      // Reload authoritative state so the UI cannot drift after a rejected edit.
       try {
         setDesign(await api.getDesign(designId))
       } catch {
-        /* leave error visible */
+        /* keep error */
       }
     } finally {
       setSaving(false)
@@ -126,7 +133,6 @@ export function DesignEditorProvider({
     [flush],
   )
 
-  // Local optimistic mutation, then debounced server reconcile.
   const mutateComponents = useCallback(
     (fn: (components: DesignComponent[]) => DesignComponent[]) => {
       setDesign((prev) => {
@@ -139,6 +145,22 @@ export function DesignEditorProvider({
     [scheduleSave],
   )
 
+  const patchFields = useCallback(
+    async (patch: FieldPatch) => {
+      setSaving(true)
+      try {
+        const updated = await api.patchDesign(designId, patch)
+        setDesign(updated)
+        setError(null)
+      } catch (e) {
+        setError(String((e as Error).message ?? e))
+      } finally {
+        setSaving(false)
+      }
+    },
+    [designId],
+  )
+
   const value = useMemo<EditorValue>(
     () => ({
       design,
@@ -147,6 +169,8 @@ export function DesignEditorProvider({
       error,
       selectedId,
       select: setSelectedId,
+      reload,
+      patchFields,
       addComponent: (kind, layerRole) =>
         mutateComponents((cs) => [...cs, blankComponent(kind, layerRole)]),
       removeComponent: (id) => {
@@ -163,39 +187,19 @@ export function DesignEditorProvider({
           return copy
         }),
       updateParams: (id, params) =>
-        mutateComponents((cs) =>
-          cs.map((c) => (c.id === id ? { ...c, params } : c)),
-        ),
+        mutateComponents((cs) => cs.map((c) => (c.id === id ? { ...c, params } : c))),
       setProduct: (id, productId) =>
+        mutateComponents((cs) => cs.map((c) => (c.id === id ? { ...c, product_id: productId } : c))),
+      setProvenance: (id, provenance) =>
         mutateComponents((cs) =>
-          cs.map((c) => (c.id === id ? { ...c, product_id: productId } : c)),
+          cs.map((c) =>
+            c.id === id
+              ? { ...c, provenance, product_id: provenance === 'customer' ? null : c.product_id }
+              : c,
+          ),
         ),
-      updateArtwork: async (patch) => {
-        setSaving(true)
-        try {
-          const updated = await api.patchDesign(designId, { artwork: patch })
-          setDesign(updated)
-          setError(null)
-        } catch (e) {
-          setError(String((e as Error).message ?? e))
-        } finally {
-          setSaving(false)
-        }
-      },
-      setStatus: async (status) => {
-        setSaving(true)
-        try {
-          const updated = await api.patchDesign(designId, { status })
-          setDesign(updated)
-          setError(null)
-        } catch (e) {
-          setError(String((e as Error).message ?? e))
-        } finally {
-          setSaving(false)
-        }
-      },
     }),
-    [design, loading, saving, error, selectedId, mutateComponents, designId],
+    [design, loading, saving, error, selectedId, mutateComponents, patchFields, reload],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

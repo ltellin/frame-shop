@@ -1,6 +1,7 @@
 # ADR 0009 — Order and Work Order numbering
 
-- **Status:** accepted
+- **Status:** accepted — amended by [ADR 0012](0012-design-as-fabrication-spec.md)
+  (a Design may be a loose draft with no Order)
 - **Date:** 2026-09-05
 
 ## Context

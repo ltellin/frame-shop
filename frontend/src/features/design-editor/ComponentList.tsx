@@ -11,6 +11,15 @@ export function ComponentList() {
   if (!design) return null
   const components = design.components
 
+  if (!design.complete) {
+    return (
+      <section className="panel">
+        <h3>Components</h3>
+        <p className="muted">Enter the piece dimensions above to start adding components.</p>
+      </section>
+    )
+  }
+
   return (
     <section className="panel">
       <div className="panel-head">

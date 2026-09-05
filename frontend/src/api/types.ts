@@ -1,5 +1,5 @@
-// Hand-written mirror of the backend read model. For a later milestone these
-// can be generated from the FastAPI OpenAPI schema via openapi-typescript.
+// Hand-written mirror of the backend read model. Keep in sync with
+// backend/app/services/design_service.py::to_read_model.
 
 export type PriceLine = {
   component_id: number | null
@@ -29,6 +29,8 @@ export type ProductSummary = {
   discontinued: boolean
 }
 
+export type Provenance = 'shop' | 'customer'
+
 export type DesignComponent = {
   id: number
   kind: string
@@ -36,6 +38,7 @@ export type DesignComponent = {
   layer_role: string
   params: Record<string, unknown>
   product_id: number | null
+  provenance: Provenance
   parent_component_id: number | null
   product: ProductSummary | null
 }
@@ -45,6 +48,7 @@ export type OutsideInEntry = {
   component_id: number | null
   kind: string
   layer_role: string
+  provenance: string
   label: string
 }
 
@@ -52,6 +56,7 @@ export type ExplodedLayer = {
   component_id: number | null
   kind: string
   layer_role: string
+  provenance: string
   label: string
   width_in: number
   height_in: number
@@ -66,33 +71,64 @@ export type ExplodedLayout = {
   bounds: { width_in: number; height_in: number }
 }
 
-export type Artwork = {
+export type DesignImage = {
   id: number
-  title: string
+  image_id: string
+  url: string
+  source: 'upload' | 'camera'
+  is_primary: boolean
+  content_type: string
+  created_at: string | null
+}
+
+export type DesignArt = {
+  title: string | null
   description: string | null
-  width_in: number
-  height_in: number
+  art_type: string | null
   depth_in: number | null
   notes: string | null
 }
 
+export type DesignSummary = {
+  finished_width_in: number
+  finished_height_in: number
+  united_in: number
+  base_width_in: number
+  base_height_in: number
+  quantity: number
+}
+
 export type DesignRead = {
   id: number
-  order_id: number
-  artwork_id: number
   name: string
-  status: 'draft' | 'held' | 'quoted' | 'accepted' | 'discarded'
-  version: number
+  type: string
+  status: 'draft' | 'accepted' | 'discarded'
   editable: boolean
+  version: number
+  order_id: number | null
+  customer_id: number | null
+  customer_name: string | null
+  quantity: number
+  base_ref: string
+  base_width_in: number | null
+  base_height_in: number | null
+  art: DesignArt
   updated_at: string | null
-  artwork: Artwork
+  images: DesignImage[]
   components: DesignComponent[]
-  price: PriceBreakdown
-  representations: {
-    outside_in: OutsideInEntry[]
-    exploded: ExplodedLayout
-  }
+  complete: boolean
+  price: PriceBreakdown | null
+  representations: { outside_in: OutsideInEntry[]; exploded: ExplodedLayout } | null
+  summary: DesignSummary | null
   warnings: string[]
+}
+
+export type DesignTypeMeta = {
+  key: string
+  label: string
+  base_ref: string
+  has_art: boolean
+  starter_stack: { kind: string; params?: Record<string, unknown>; provenance?: string }[]
 }
 
 export type ComponentKindMeta = {
@@ -134,6 +170,7 @@ export type ComponentInput = {
   params: Record<string, unknown>
   layer_role?: string | null
   product_id?: number | null
+  provenance?: Provenance
   parent_index?: number | null
 }
 
@@ -151,7 +188,7 @@ export type OrderSummary = {
   status: string
   customer_id: number
   customer_name: string
-  piece_count: number
+  due_date: string | null
   design_count: number
 }
 
@@ -161,6 +198,30 @@ export type OrderDetail = {
   status: string
   customer_id: number
   customer_name: string
-  artworks: { id: number; title: string; width_in: number; height_in: number; depth_in: number | null }[]
-  designs: { id: number; name: string; status: string; artwork_title: string }[]
+  due_date: string | null
+  po_number: string | null
+  designs: {
+    id: number
+    name: string
+    type: string
+    status: string
+    art_title: string | null
+    base_width_in: number | null
+    base_height_in: number | null
+    subtotal_cents: number | null
+  }[]
+}
+
+export type DesignListItem = {
+  id: number
+  name: string
+  type: string
+  status: string
+  order_id: number | null
+  customer_name: string | null
+  base_ref: string
+  base_width_in: number | null
+  base_height_in: number | null
+  subtotal_cents: number | null
+  updated_at: string | null
 }

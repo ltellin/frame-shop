@@ -15,8 +15,11 @@ ruff="$repo/backend/.venv/bin/ruff"
 
 case "$file" in
   *.py)
+    # Format only. Import sorting: apply I-rule fixes but not F401 (removing a
+    # freshly added, not-yet-referenced import mid-edit is more annoying than
+    # helpful — `/checks` still catches unused imports).
     "$ruff" format "$file" >/dev/null 2>&1 || true
-    "$ruff" check --fix --quiet "$file" >/dev/null 2>&1 || true
+    "$ruff" check --fix --quiet --select I "$file" >/dev/null 2>&1 || true
     ;;
 esac
 

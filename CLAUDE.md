@@ -35,12 +35,16 @@ auto-formats Python files with `ruff` after each edit.
   Framing / pricing / business rules live in `domain/` and `services/` —
   **never** in the frontend. The frontend renders numbers and a layout model the
   backend gives it. (ADR 0002)
-- **A Design is a flat, ordered list of typed `DesignComponent` rows** — `kind` +
-  `sequence` (outside→inside) + kind-validated JSON `params` + an optional single
-  `parent_component_id`. Component kinds are a registry in
-  `backend/app/domain/design/kinds.py`. The textual and schematic views are pure
-  functions in `domain/design/representations.py`. Do **not** add fixed component
-  columns; do **not** build a generic tree/graph. (ADR 0003)
+- **A Design is a universal *fabrication spec*** — a base rectangle (`base_ref` +
+  `base_width_in`/`base_height_in`) + a flat ordered list of typed
+  `DesignComponent` rows (`kind` + `sequence` + kind-validated JSON `params` +
+  `provenance` + an optional single `parent_component_id`). Artwork is optional
+  metadata on the Design (**no Artwork table**). `type` is a light tag (starter
+  stack + intake mode), never a component gate. A Design may be a loose draft
+  with no order/customer. Component + design types are registries in
+  `backend/app/domain/design/kinds.py`; textual + schematic views are pure
+  functions in `representations.py`. Do **not** add fixed/per-type component
+  columns; do **not** build a generic tree/graph. (ADR 0003, 0012)
 - **Pricing** is a separate, versioned `PricingProfile` in `domain/pricing/`. The
   Design stores no authoritative price — only a display cache. (ADR 0008)
 - **Money is integer cents. Measurements are `Decimal` inches.** Every schema

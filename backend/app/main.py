@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import catalog, customers, designs, health, orders
+from app.api import catalog, customers, design_images, designs, health, orders
 from app.config import get_settings
 from app.services.errors import DomainValidationError, NotFoundError
 
@@ -28,6 +28,7 @@ def create_app() -> FastAPI:
     app.include_router(customers.router, prefix=api_prefix)
     app.include_router(orders.router, prefix=api_prefix)
     app.include_router(designs.router, prefix=api_prefix)
+    app.include_router(design_images.router, prefix=api_prefix)
 
     @app.exception_handler(NotFoundError)
     async def _not_found(_: Request, exc: NotFoundError) -> JSONResponse:

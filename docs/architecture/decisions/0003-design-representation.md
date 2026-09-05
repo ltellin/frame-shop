@@ -1,6 +1,7 @@
 # ADR 0003 — A Design is a flat ordered list of typed components
 
-- **Status:** accepted
+- **Status:** accepted — amended by [ADR 0012](0012-design-as-fabrication-spec.md)
+  (adds `type`, `provenance`; artwork folds onto the Design)
 - **Date:** 2026-09-05
 
 ## Context

@@ -1,52 +1,61 @@
 # Domain model
 
+_See ADR 0012 for the shape below (the Design as universal fabrication spec)._
+
 ## Entities (database tables)
 
 ```
-Customer 1───* Order 1───* Artwork
-                 │              ▲
-                 │ 1            │ referenced by
-                 ▼              │
-               Design *─────────┘
-                 │ 1
-                 ▼
-           DesignComponent *──0..1 (self) parent_component_id
+Customer 1───* Order 1───* Design *──0..1 (self) parent_component_id via
+   ▲                          │  1                DesignComponent
+   │ 0..1 (loose draft)       ├──* DesignComponent *──0..1 → Product
+   └──────────────────────────┤
+                              └──* DesignImage
 
 Vendor 1───* Product  ◄── (nullable) DesignComponent.product_id
 ```
 
 ### Customer
-Contact + history. `name`, `phone?`, `email?`, `notes?`. Minimal now; structured
-to grow.
+Contact + history. `name`, `phone?`, `email?`, `notes?`, `is_trade` (wholesale /
+B2B account). Minimal now; structured to grow.
 
 ### Order
 The commercial transaction container. `number` (int sequence starting at 5271),
-`customer_id`, `status` (`draft` while being built at the counter). A Design
-**always** belongs to an Order; starting the first Design auto-creates a draft
-Order (`order_service.get_or_create_draft_order`). Financial fields
-(subtotal / discount / tax / deposit / balance) are **not** here yet — slice 2.
+`customer_id`, `status`, `due_date?`, `po_number?`. An Order is created when a
+Design is **added to an order** (`design_service.add_to_order`) — it is *not*
+auto-created. Financial fields (subtotal / discount / tax / deposit / balance)
+and `order_sale_line` (retail material) are **not** here yet.
 
-### Artwork
-The physical piece. `order_id`, `title`, `description?`, `width_in`, `height_in`,
-`depth_in?`, `notes?`. **Belongs to the Order**, referenced by a Design — so
-re-designing a piece keeps one Artwork record. (ADR: see risk flags in roadmap.)
-
-### Design
-An editable specification. `order_id`, `artwork_id`, `name`, `status` ∈
-`draft | held | quoted | accepted | discarded`. Owns an ordered list of
-`DesignComponent`. Carries:
-- `version` (int, bumped on every edit) + `updated_at` — reserved for optimistic
-  concurrency later (ADR 0010).
-- `supersedes_id` (nullable self-FK) — reserved for revision lineage (ADR 0004).
-- `price_breakdown` (JSON) + `priced_at` + `pricing_profile_id` +
-  `pricing_profile_version` — a **display cache only, never authoritative**
-  (ADR 0008). Editable statuses: `draft`, `held`, `quoted`. `accepted` is locked.
+### Design — the fabrication spec
+An editable spec. Owns an ordered list of `DesignComponent` and a list of
+`DesignImage`. **May be a loose draft** — `order_id` and `customer_id` both
+nullable. Fields:
+- `type` — `framing | mat_only | glazing_only | frame_only | canvas_stretch |
+  object_box | swap | repair | other`. A light tag (intake mode + starter stack
+  + future task template); does not gate components. `STARTER_STACKS` /
+  `DESIGN_TYPES` in `kinds.py`.
+- `base_ref` (`art | sight | glass | rabbet | outside`) + `base_width_in` /
+  `base_height_in` (nullable) — the rectangle the component walk is built around.
+- `art_title?`, `art_description?`, `art_type?`, `art_depth_in?`, `art_notes?` —
+  optional artwork metadata (dimensions are `base_*`). **No Artwork table.**
+- `quantity` (default 1) — identical physical pieces (trade batches).
+- `status` ∈ `draft | accepted | discarded`. Editable only while `draft`.
+  "On an order" is `order_id != null`, not a status. A quote is a printed draft.
+- `version` + `updated_at` — reserved for optimistic concurrency (ADR 0010).
+- `supersedes_id` — reserved for revision lineage (ADR 0004).
+- `price_breakdown` (JSON) + `priced_at` + `pricing_profile_id` / `_version` —
+  **display cache only, never authoritative** (ADR 0008); `null` until the design
+  has base dimensions.
 
 ### DesignComponent
 One typed element of a Design. `design_id`, `kind`, `sequence` (contiguous,
-1 = outermost), `layer_role?`, `params` (JSON), `product_id?`,
-`parent_component_id?`. `params` is validated on write by the kind's Pydantic
-model in `kinds.py`. See ADR 0003.
+1 = outermost), `layer_role?`, `params` (JSON, validated on write by the kind's
+Pydantic model in `kinds.py`), `product_id?`, `parent_component_id?`,
+`provenance` (`shop | customer` — ADR 0012). See ADR 0003.
+
+### DesignImage
+Artwork photos (ADR 0013). `design_id`, `image_id` (uuid, URL + filename stem),
+`content_type`, `byte_size`, `source` (`upload | camera`), `is_primary`. Bytes on
+disk under `FRAMESHOP_MEDIA_DIR`.
 
 ### Vendor / Product
 Catalog **reference data** — a different concept from transaction data (ADR 0007).
@@ -60,8 +69,11 @@ Catalog **reference data** — a different concept from transaction data (ADR 00
 - **Money** — integer cents (`domain/money.py`).
 - **Dimensions** — `Decimal` inches; `united_in`, `perimeter_in`, `area_sqin`,
   `grown_by()` (`domain/measure.py`).
-- **DesignSpec / ArtworkSpec / ComponentSpec / ProductResolution** — plain
-  dataclasses; the pure-data form services hand to the domain (`domain/design/spec.py`).
+- **DesignSpec** (`base_width_in`/`base_height_in`, `base_ref`, `type`,
+  `quantity`, optional `ArtworkSpec` metadata, components) / **ComponentSpec**
+  (with `provenance`) / **ProductResolution** — plain dataclasses; the pure-data
+  form services hand to the domain (`domain/design/spec.py`). Built only when the
+  design has real base dimensions.
 - **LayerGeometry / LayerView** — the output of the geometry walk.
 - **PriceBreakdown / PriceLine** — the pricing engine's output.
 
@@ -78,23 +90,27 @@ Catalog **reference data** — a different concept from transaction data (ADR 00
 
 ## The geometry walk
 
-`walk_layers(design)` starts at the artwork size and moves outward
+`walk_layers(design)` starts at `design.base_dimensions` and moves outward
 (sequence descending), asking each kind's `geometry(params, inner)` for its own
 footprint, its window/opening, the material it consumes, and the new running
 outer size. Both `price_design` and the representation functions consume this, so
-geometry math exists in exactly one place. The math is **placeholder** — good
+geometry math exists in exactly one place. The representation functions drop
+layers whose kind has `rendered = False` (services / fees) and drop the artwork
+pseudo-layer unless `base_ref == 'art'`. The math is **placeholder** — good
 enough for a schematic and a demo price, not a faithful cutting model.
 
-## Design → accepted → Work Order (slice 2 — designed, not built)
+`to_read_model` returns `complete: false` with null price / representations /
+summary when `base_width_in` / `base_height_in` are unset — the domain is never
+handed a dimensionless design.
 
-- `draft | held | quoted` → fully mutable, always shows **live** catalog + a fresh
-  price.
-- **Accept** (atomic service, slice 2): resolve every product against live
-  catalog → run the pricing engine with a pinned `PricingProfile` id+version →
-  serialize the resolved spec + breakdown into an **immutable snapshot JSON** →
-  create one **Work Order** per accepted Design/Artwork, numbered
-  `{order.number}-{n}`, holding the snapshot → set `Design.status = accepted`
-  (locked).
+## Design → accepted → Work Order (next slice — designed, not built)
+
+- `draft` → fully mutable, always shows **live** catalog + a fresh price.
+- **Accept** (atomic service): resolve every product against live catalog → run
+  the pricing engine with a pinned `PricingProfile` id+version → serialize the
+  resolved spec + breakdown into an **immutable snapshot JSON** → create one (or
+  `quantity`) **Work Order** per accepted Design, numbered `{order.number}-{n}`,
+  holding the snapshot → set `Design.status = accepted` (locked).
 - Editing an accepted Design → new Design row with `supersedes_id` → re-accept →
   new Work Order revision.
 - **Invariant:** a snapshot is never mutated. Catalog/pricing changes never touch

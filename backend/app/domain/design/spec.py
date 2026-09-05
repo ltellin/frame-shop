@@ -3,6 +3,9 @@
 Services build these dataclasses from ORM rows (or request payloads) and hand
 them to the geometry walk, the pricing engine, and the representation functions.
 Nothing in this module imports SQLAlchemy or FastAPI.
+
+A DesignSpec is only ever built when the design has real base dimensions — the
+service layer guards that. So the geometry seed is always present.
 """
 
 from __future__ import annotations
@@ -12,17 +15,26 @@ from decimal import Decimal
 
 from app.domain.measure import Dimensions
 
+# Values a design's base rectangle can represent.
+BASE_REFS = ("art", "sight", "glass", "rabbet", "outside")
+
+BASE_REF_LABELS = {
+    "art": "Art size",
+    "sight": "Sight size",
+    "glass": "Glass size",
+    "rabbet": "Frame rabbet",
+    "outside": "Outside size",
+}
+
 
 @dataclass(frozen=True, slots=True)
 class ArtworkSpec:
-    title: str
-    width_in: Decimal
-    height_in: Decimal
-    depth_in: Decimal | None = None
+    """Optional artwork *metadata*. Dimensions live on the DesignSpec base."""
 
-    @property
-    def dimensions(self) -> Dimensions:
-        return Dimensions(self.width_in, self.height_in)
+    title: str | None = None
+    art_type: str | None = None  # print_photo | canvas | works_on_paper | textile | object_3d
+    depth_in: Decimal | None = None
+    notes: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,18 +61,32 @@ class ProductResolution:
 class ComponentSpec:
     id: int
     kind: str
-    sequence: int  # 1 = outermost, ascending toward the artwork
+    sequence: int  # 1 = outermost, ascending toward the base opening
     params: dict
     layer_role: str | None = None
     product: ProductResolution | None = None
+    provenance: str = "shop"  # shop | customer
     parent_component_id: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class DesignSpec:
     id: int | None
-    artwork: ArtworkSpec
+    base_width_in: Decimal
+    base_height_in: Decimal
+    base_ref: str = "art"
+    type: str = "framing"
+    quantity: int = 1
+    artwork: ArtworkSpec | None = None
     components: tuple[ComponentSpec, ...] = field(default_factory=tuple)
+
+    @property
+    def base_dimensions(self) -> Dimensions:
+        return Dimensions(self.base_width_in, self.base_height_in)
+
+    @property
+    def shows_artwork_layer(self) -> bool:
+        return self.base_ref == "art"
 
     def ordered_outside_in(self) -> list[ComponentSpec]:
         return sorted(self.components, key=lambda c: c.sequence)

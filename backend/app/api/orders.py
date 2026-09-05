@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.schemas import ArtworkCreate, OrderCreate
+from app.api.schemas import OrderCreate
 from app.db.base import get_session
 from app.services import order_service
 
@@ -17,18 +17,19 @@ def _order_dict(order) -> dict:
         "customer_id": order.customer_id,
         "customer_name": order.customer.name,
         "status": order.status,
-        "artworks": [
-            {
-                "id": a.id,
-                "title": a.title,
-                "width_in": float(a.width_in),
-                "height_in": float(a.height_in),
-                "depth_in": float(a.depth_in) if a.depth_in else None,
-            }
-            for a in order.artworks
-        ],
+        "due_date": order.due_date.isoformat() if order.due_date else None,
+        "po_number": order.po_number,
         "designs": [
-            {"id": d.id, "name": d.name, "status": d.status, "artwork_title": d.artwork.title}
+            {
+                "id": d.id,
+                "name": d.name,
+                "type": d.type,
+                "status": d.status,
+                "art_title": d.art_title,
+                "base_width_in": float(d.base_width_in) if d.base_width_in is not None else None,
+                "base_height_in": float(d.base_height_in) if d.base_height_in is not None else None,
+                "subtotal_cents": (d.price_breakdown or {}).get("subtotal_cents"),
+            }
             for d in order.designs
         ],
     }
@@ -41,7 +42,7 @@ def _order_summary(order) -> dict:
         "status": order.status,
         "customer_id": order.customer_id,
         "customer_name": order.customer.name,
-        "piece_count": len(order.artworks),
+        "due_date": order.due_date.isoformat() if order.due_date else None,
         "design_count": len(order.designs),
     }
 
@@ -53,7 +54,9 @@ def list_orders(session: Session = Depends(get_session)) -> list[dict]:
 
 @router.post("", status_code=201)
 def create_order(body: OrderCreate, session: Session = Depends(get_session)) -> dict:
-    order = order_service.create_order(session, customer_id=body.customer_id)
+    order = order_service.create_order(
+        session, customer_id=body.customer_id, due_date=body.due_date, po_number=body.po_number
+    )
     session.commit()
     return _order_dict(order)
 
@@ -61,28 +64,3 @@ def create_order(body: OrderCreate, session: Session = Depends(get_session)) -> 
 @router.get("/{order_id}")
 def get_order(order_id: int, session: Session = Depends(get_session)) -> dict:
     return _order_dict(order_service.get_order(session, order_id))
-
-
-@router.post("/{order_id}/artworks", status_code=201)
-def add_artwork(
-    order_id: int, body: ArtworkCreate, session: Session = Depends(get_session)
-) -> dict:
-    artwork = order_service.add_artwork(
-        session,
-        order_id=order_id,
-        title=body.title,
-        width_in=body.width_in,
-        height_in=body.height_in,
-        depth_in=body.depth_in,
-        description=body.description,
-        notes=body.notes,
-    )
-    session.commit()
-    return {
-        "id": artwork.id,
-        "order_id": artwork.order_id,
-        "title": artwork.title,
-        "width_in": float(artwork.width_in),
-        "height_in": float(artwork.height_in),
-        "depth_in": float(artwork.depth_in) if artwork.depth_in else None,
-    }

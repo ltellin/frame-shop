@@ -1,22 +1,20 @@
-"""Customer / Order / Artwork use-cases.
+"""Customer / Order use-cases.
 
-Minimal for the first slice. The Order exists so that multiple pieces from one
-visit group correctly later; for now it is a lightweight container created on
-demand.
+An Order groups the pieces (Designs) from one customer transaction. It carries
+the customer, an optional due date / PO number, and — later — money. A Design is
+attached to an Order via ``design_service.add_to_order``.
 """
 
 from __future__ import annotations
 
-from decimal import Decimal
-
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.db.models import Artwork, Customer, Order
-from app.domain.measure import parse_inches
+from app.db.models import Customer, Order
 from app.services.errors import NotFoundError
 
 _FIRST_ORDER_NUMBER = 5271  # nod to the brief's example
+_OPEN_ORDER_STATUSES = ("draft", "open")
 
 
 def create_customer(
@@ -26,8 +24,9 @@ def create_customer(
     phone: str | None = None,
     email: str | None = None,
     notes: str | None = None,
+    is_trade: bool = False,
 ) -> Customer:
-    customer = Customer(name=name, phone=phone, email=email, notes=notes)
+    customer = Customer(name=name, phone=phone, email=email, notes=notes, is_trade=is_trade)
     session.add(customer)
     session.flush()
     return customer
@@ -49,9 +48,17 @@ def _next_order_number(session: Session) -> int:
     return _FIRST_ORDER_NUMBER if current is None else current + 1
 
 
-def create_order(session: Session, *, customer_id: int) -> Order:
+def create_order(
+    session: Session, *, customer_id: int, due_date=None, po_number: str | None = None
+) -> Order:
     get_customer(session, customer_id)
-    order = Order(number=_next_order_number(session), customer_id=customer_id, status="draft")
+    order = Order(
+        number=_next_order_number(session),
+        customer_id=customer_id,
+        status="draft",
+        due_date=due_date,
+        po_number=po_number,
+    )
     session.add(order)
     session.flush()
     return order
@@ -68,57 +75,19 @@ def list_orders(session: Session) -> list[Order]:
     return list(session.scalars(select(Order).order_by(Order.number.desc())))
 
 
-def get_or_create_draft_order(session: Session, *, customer_id: int) -> Order:
+def get_or_create_open_order(
+    session: Session, *, customer_id: int, due_date=None, po_number: str | None = None
+) -> Order:
+    """Reuse the customer's most recent still-open order, else start one."""
     existing = session.scalars(
         select(Order)
-        .where(Order.customer_id == customer_id, Order.status == "draft")
+        .where(Order.customer_id == customer_id, Order.status.in_(_OPEN_ORDER_STATUSES))
         .order_by(Order.number.desc())
     ).first()
-    return existing or create_order(session, customer_id=customer_id)
-
-
-def add_artwork(
-    session: Session,
-    *,
-    order_id: int,
-    title: str,
-    width_in,
-    height_in,
-    depth_in=None,
-    description: str | None = None,
-    notes: str | None = None,
-) -> Artwork:
-    get_order(session, order_id)
-    artwork = Artwork(
-        order_id=order_id,
-        title=title or "Untitled",
-        description=description,
-        width_in=parse_inches(width_in),
-        height_in=parse_inches(height_in),
-        depth_in=_opt_inches(depth_in),
-        notes=notes,
-    )
-    session.add(artwork)
-    session.flush()
-    return artwork
-
-
-def update_artwork(session: Session, artwork: Artwork, patch: dict) -> Artwork:
-    if "title" in patch and patch["title"] is not None:
-        artwork.title = patch["title"]
-    if "description" in patch:
-        artwork.description = patch["description"]
-    if "notes" in patch:
-        artwork.notes = patch["notes"]
-    if patch.get("width_in") is not None:
-        artwork.width_in = parse_inches(patch["width_in"])
-    if patch.get("height_in") is not None:
-        artwork.height_in = parse_inches(patch["height_in"])
-    if "depth_in" in patch:
-        artwork.depth_in = _opt_inches(patch["depth_in"])
-    session.flush()
-    return artwork
-
-
-def _opt_inches(value) -> Decimal | None:
-    return None if value is None or value == "" else parse_inches(value)
+    if existing is not None:
+        if due_date is not None and existing.due_date is None:
+            existing.due_date = due_date
+        if po_number and not existing.po_number:
+            existing.po_number = po_number
+        return existing
+    return create_order(session, customer_id=customer_id, due_date=due_date, po_number=po_number)

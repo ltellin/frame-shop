@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import io
+
 
 def test_health(client):
     r = client.get("/api/health")
@@ -7,123 +9,107 @@ def test_health(client):
     assert r.json()["status"] == "ok"
 
 
-def test_component_kinds_expose_param_schemas(client):
-    r = client.get("/api/catalog/component-kinds")
-    assert r.status_code == 200
-    keys = {k["key"] for k in r.json()}
-    assert {"moulding", "mat", "glazing", "mount", "backing"} <= keys
-    moulding = next(k for k in r.json() if k["key"] == "moulding")
-    assert "param_schema" in moulding
+def test_catalog_metadata(client):
+    kinds = {k["key"] for k in client.get("/api/catalog/component-kinds").json()}
+    assert {"moulding", "mat", "glazing", "mount", "backing"} <= kinds
+    types = {t["key"] for t in client.get("/api/catalog/design-types").json()}
+    assert {"framing", "mat_only", "glazing_only", "frame_only", "swap", "repair"} <= types
 
 
-def test_design_lifecycle(client, seeded_catalog):
-    # quick-create a customer inline and start a design
-    start = client.post(
+def test_loose_draft_then_complete(client):
+    start = client.post("/api/designs", json={"type": "mat_only"})
+    assert start.status_code == 201, start.text
+    d = start.json()
+    assert d["complete"] is False and d["order_id"] is None
+
+    did = d["id"]
+    patched = client.patch(
+        f"/api/designs/{did}",
+        json={"base_width_in": "20 1/2", "base_height_in": "24", "components": [{"kind": "mat"}]},
+    )
+    assert patched.status_code == 200, patched.text
+    body = patched.json()
+    assert body["complete"] is True
+    assert body["price"]["subtotal_cents"] > 0
+    assert body["summary"]["finished_width_in"] >= 20
+    assert body["base_ref"] == "sight"
+
+    # loose-draft list
+    loose = client.get("/api/designs?loose=true").json()
+    assert did in [x["id"] for x in loose]
+
+
+def test_customer_supplied_component_via_api(client):
+    d = client.post(
         "/api/designs",
         json={
-            "customer": {"name": "Grace"},
-            "artwork": {"title": "Blueprint", "width_in": "18", "height_in": "24"},
+            "type": "swap",
+            "base_width_in": "18",
+            "base_height_in": "24",
             "components": [
-                {
-                    "kind": "moulding",
-                    "product_id": seeded_catalog["moulding"],
-                    "params": {"face_in": "1.25"},
-                },
-                {"kind": "glazing", "product_id": seeded_catalog["glazing"], "params": {}},
-                {
-                    "kind": "mat",
-                    "product_id": seeded_catalog["mat"],
-                    "params": {"border_in": "2.5"},
-                },
-                {"kind": "backing", "params": {"material": "foamcore"}},
+                {"kind": "moulding", "provenance": "customer"},
+                {"kind": "glazing"},
             ],
         },
+    ).json()
+    frame = next(c for c in d["components"] if c["kind"] == "moulding")
+    assert frame["provenance"] == "customer"
+    price_frame = next(line for line in d["price"]["lines"] if line["kind"] == "moulding")
+    assert "handling" in price_frame["detail"]
+
+
+def test_add_to_order_flow(client):
+    d = client.post("/api/designs", json={"base_width_in": "11", "base_height_in": "14"}).json()
+    r = client.post(
+        f"/api/designs/{d['id']}/add-to-order", json={"customer": {"name": "Wes Kaplan"}}
     )
-    assert start.status_code == 201, start.text
-    design = start.json()
-    design_id = design["id"]
+    assert r.status_code == 200, r.text
+    order_id = r.json()["order_id"]
 
-    assert design["price"]["subtotal_cents"] > 0
-    assert len(design["components"]) == 4
-    assert design["representations"]["outside_in"][0]["kind"] == "moulding"
-    assert len(design["representations"]["exploded"]["layers"]) == 5  # 4 + artwork
+    detail = client.get(f"/api/orders/{order_id}").json()
+    assert detail["customer_name"] == "Wes Kaplan"
+    assert detail["designs"][0]["id"] == d["id"]
 
-    # reorder + widen the mat via PATCH (send full desired list)
-    comps = design["components"]
-    mat = next(c for c in comps if c["kind"] == "mat")
-    mat["params"]["border_in"] = "4"
-    patch = client.patch(
-        f"/api/designs/{design_id}",
-        json={
-            "components": [
-                {
-                    "id": c["id"],
-                    "kind": c["kind"],
-                    "params": c["params"],
-                    "product_id": c["product_id"],
-                }
-                for c in comps
-            ]
-        },
+    orders = client.get("/api/orders").json()
+    assert any(o["id"] == order_id and o["design_count"] == 1 for o in orders)
+
+
+def test_image_upload_serve_delete(client):
+    d = client.post("/api/designs", json={"base_width_in": "8", "base_height_in": "10"}).json()
+    did = d["id"]
+
+    png = (
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00"
+        b"\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
     )
-    assert patch.status_code == 200, patch.text
-    assert patch.json()["price"]["subtotal_cents"] != design["price"]["subtotal_cents"]
-
-    # hold, then confirm it persists on reload
-    client.patch(f"/api/designs/{design_id}", json={"status": "held"})
-    reload = client.get(f"/api/designs/{design_id}")
-    assert reload.json()["status"] == "held"
-    assert reload.json()["editable"] is True
-
-
-def test_discontinued_product_warns(client, seeded_catalog):
-    start = client.post(
-        "/api/designs",
-        json={
-            "customer": {"name": "Kay"},
-            "artwork": {"title": "X", "width_in": "10", "height_in": "10"},
-            "components": [{"kind": "moulding", "product_id": seeded_catalog["discontinued"]}],
-        },
+    up = client.post(
+        f"/api/designs/{did}/images",
+        files={"file": ("art.png", io.BytesIO(png), "image/png")},
     )
-    assert start.status_code == 201
-    assert any("discontinued" in w for w in start.json()["warnings"])
+    assert up.status_code == 201, up.text
+    img = up.json()
+    assert img["is_primary"] is True and img["source"] == "upload"
+
+    assert client.get(f"/api/designs/{did}").json()["images"][0]["id"] == img["id"]
+
+    served = client.get(img["url"])
+    assert served.status_code == 200 and served.content == png
+
+    assert client.delete(img["url"]).status_code == 204
+    assert client.get(f"/api/designs/{did}").json()["images"] == []
+
+
+def test_capture_without_camera_returns_501(client):
+    d = client.post("/api/designs", json={"base_width_in": "8", "base_height_in": "10"}).json()
+    r = client.post(f"/api/designs/{d['id']}/images/capture")
+    assert r.status_code == 501
+    assert "camera" in r.json()["detail"].lower()
 
 
 def test_unknown_kind_returns_422(client):
     r = client.post(
         "/api/designs",
-        json={
-            "customer": {"name": "Zed"},
-            "artwork": {"title": "X", "width_in": "10", "height_in": "10"},
-            "components": [{"kind": "sasquatch"}],
-        },
+        json={"base_width_in": "10", "base_height_in": "10", "components": [{"kind": "sasquatch"}]},
     )
     assert r.status_code == 422
-
-
-def test_customers_and_orders_lists(client, seeded_catalog):
-    client.post(
-        "/api/designs",
-        json={
-            "customer": {"name": "Rosa Vance", "phone": "555-0100"},
-            "artwork": {"title": "Map", "width_in": "12", "height_in": "16"},
-        },
-    )
-
-    customers = client.get("/api/customers")
-    assert customers.status_code == 200
-    rosa = next(c for c in customers.json() if c["name"] == "Rosa Vance")
-    assert rosa["phone"] == "555-0100"
-    assert rosa["order_count"] == 1
-
-    orders = client.get("/api/orders")
-    assert orders.status_code == 200
-    assert len(orders.json()) == 1
-    order = orders.json()[0]
-    assert order["customer_name"] == "Rosa Vance"
-    assert order["design_count"] == 1
-    assert order["number"] >= 5271
-
-    detail = client.get(f"/api/orders/{order['id']}")
-    assert detail.status_code == 200
-    assert detail.json()["designs"][0]["artwork_title"] == "Map"

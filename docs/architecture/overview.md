@@ -1,7 +1,8 @@
 # Architecture overview (as built)
 
-This describes the code as it stands after slice 1. For *why* each choice was
-made, see `decisions/`. For *what's next*, see `../roadmap.md`.
+This describes the code as it stands after slice 1.5 (the design-workflow
+rework — ADR 0012 / 0013). For *why* each choice was made, see `decisions/`. For
+*what's next*, see `../roadmap.md`.
 
 ## Stack
 
@@ -18,19 +19,21 @@ made, see `decisions/`. For *what's next*, see `../roadmap.md`.
 backend/
   app/
     main.py            FastAPI factory, router wiring, exception→HTTP mapping
-    config.py          env-driven settings (FRAMESHOP_* vars)
-    api/               HTTP only: health, catalog, customers, orders, designs
+    config.py          env-driven settings (FRAMESHOP_* vars) incl. media_dir / capture_source
+    api/               HTTP only: health, catalog, customers, orders, designs, design_images
     services/          use-cases; own transactions + commits
       catalog_service.py   list/resolve products; the vendor-ingestion seam
-      order_service.py     customer / order / artwork
-      design_service.py    create, load, edit components, reprice, build read model
+      order_service.py     customer / order
+      design_service.py    create, load, edit, reprice, add-to-order, build read model
+      image_service.py     save / serve-path / delete artwork images on disk
       errors.py            NotFoundError / DomainValidationError → 404 / 422
+    capture/           camera-capture abstraction (CaptureSource, NullCaptureSource, registry)
     domain/            pure Python — no fastapi, no sqlalchemy
       money.py         Money value object, integer cents
       measure.py       Dimensions, parse_inches (handles "16 1/2")
       design/
-        spec.py            ArtworkSpec / ComponentSpec / DesignSpec / ProductResolution (dataclasses)
-        kinds.py           component-kind registry + per-kind Pydantic param models
+        spec.py            DesignSpec (base dims + type) / ComponentSpec / ArtworkSpec / ProductResolution
+        kinds.py           component-kind registry + DESIGN_TYPES + STARTER_STACKS
         layers.py          LayerGeometry / LayerView (shared, breaks an import cycle)
         geometry.py        walk_layers() — the one place geometry accumulates
         representations.py  to_outside_in_list(), to_exploded_layout()
@@ -39,24 +42,29 @@ backend/
         engine.py          price_design(spec, profile) → PriceBreakdown
     db/
       base.py          engine, SessionLocal, Base, get_session dependency
-      models.py        ORM: Customer, Order, Artwork, Design, DesignComponent, Vendor, Product
+      models.py        ORM: Customer, Order, Design, DesignComponent, DesignImage, Vendor, Product
     seed/sample_catalog.py   fake vendors + products (5 vendors, ~13 products)
   alembic/             migrations (env.py wired to Base.metadata + settings)
-  tests/               pytest; in-memory SQLite; ~31 tests
+  media/               uploaded / captured images (gitignored)
+  tests/               pytest; in-memory SQLite
 frontend/
   src/
     api/client.ts      the ONLY module that calls the backend
     api/types.ts       hand-written mirror of the backend read model
     nav.ts             navigate(hash); App.tsx holds the route table
     state/designEditor.tsx   the one editable Design + optimistic edit + debounced PATCH
-    features/landing/        Landing.tsx — home screen: Make a Design / Customers / Orders
-    features/design/         NewDesign.tsx — start-a-design form + design list
-    features/design-editor/  ComponentList, ComponentParamsPanel, PricePanel, DesignEditor
+    features/landing/        Landing.tsx — home screen + drafts list
+    features/design/         NewDesignGate.tsx — pick type + dimensions → creates the draft
+    features/design-editor/  DesignEditor, PiecePanel, ImagesStrip, ComponentList,
+                             ComponentParamsPanel, PricePanel, SizeReadout, AddToOrderDialog
     features/schematic/      Schematic.tsx + layout.ts
     features/customers/      Customers.tsx — list + quick add
-    features/orders/         Orders.tsx — order list + pieces
+    features/orders/         Orders.tsx (list) + OrderDetail.tsx (pieces + add-another)
     theme.ts           ROLE_COLORS
 ```
+
+Routes (hash): `#/` landing · `#/design/new[?order=N]` gate · `#/designs/:id[?order=N]`
+editor · `#/customers` · `#/orders` · `#/orders/:id`.
 
 ## Request / data flow
 
@@ -64,12 +72,12 @@ frontend/
 User edits a component in ComponentList / ComponentParamsPanel
   → designEditor store updates local state optimistically
   → debounced PATCH /api/designs/{id}  { components: [full desired list] }
-      → design_service.replace_components()  (validate kinds + params, renumber sequence,
-                                              resolve parent_index → parent_component_id)
-      → design_service.recompute_price()
+      → design_service.replace_components()  (validate kinds + params + provenance,
+                                              renumber sequence, resolve parent_index)
+      → design_service._reprice_if_complete()  (skipped if base dims are unset)
           → build_spec(): ORM rows + catalog_service.resolve() → DesignSpec (pure data)
           → price_design(spec): walk_layers() → PlaceholderProfile → PriceBreakdown
-      → design_service.to_read_model(): components + price + representations + warnings
+      → design_service.to_read_model(): components + price + representations + summary + warnings
   → store replaces local state with the authoritative response
   → PricePanel and Schematic re-render from it
 ```
@@ -77,31 +85,35 @@ User edits a component in ComponentList / ComponentParamsPanel
 The frontend never computes price or geometry. `layout.ts` only maps the
 backend's exploded-layout model to SVG coordinates.
 
-## The central bet — flexible Design without a generic tree
+## The central bet — one flexible Design for every job
 
-A `Design` owns an **ordered list of typed `DesignComponent` rows**:
+A `Design` is a *fabrication spec* built around a **base rectangle** (`base_ref` +
+`base_width_in`/`base_height_in`) with an **ordered list of typed
+`DesignComponent` rows**:
 
 | field | meaning |
 |---|---|
 | `kind` | registry key (`moulding`, `mat`, `fillet`, `glazing`, `mount`, `backing`, `spacer`, `fabric`, `service`, `other`) |
-| `sequence` | 1 = outermost, contiguous, ascending toward the artwork |
+| `sequence` | 1 = outermost, contiguous |
 | `params` | kind-specific JSON, validated on write by that kind's Pydantic model |
 | `layer_role` | optional schematic-placement tag; defaults from the kind |
 | `product_id` | nullable FK to `Product` |
+| `provenance` | `shop` \| `customer` — customer-supplied → handling fee, hatched layer (ADR 0012) |
 | `parent_component_id` | nullable self-FK — used **only** where framing genuinely nests |
 
-Everything else is **derived by pure functions** of that list:
+`Design.type` is a light tag (intake mode + starter stack + future task template;
+does not gate components). Artwork is optional metadata on the Design — no Artwork
+table. A Design can be a loose draft with no order/customer.
 
-- `to_outside_in_list()` — the traditional industry description
-- `to_exploded_layout()` — the schematic model
-- `price_design()` — the price
-
-Adding a component type = one class + one `register()` in `kinds.py`. The schema
-does not change. See ADR 0003.
+Everything else is **derived by pure functions**: `to_outside_in_list()`,
+`to_exploded_layout()`, `price_design()`. Adding a component type = one class +
+one `register()` in `kinds.py`; adding a job type = one `DESIGN_TYPES` +
+`STARTER_STACKS` entry. The schema does not change. See ADR 0003 + 0012.
 
 ## What is intentionally NOT here yet
 
-Accept → snapshot → Work Order; production tasks / the 3 state facets on a Work
-Order; Order financials, payments, invoices; auth; real vendor integration; real
-pricing rules; OpenAPI-generated frontend types. Each has a designated home —
-see `../roadmap.md` and the ADRs.
+Accept → snapshot → Work Order; production tasks / the 3 state facets; Order
+financials, payments, invoices; `order_sale_line` (retail material); real vendor
+integration; real pricing rules; the `stretcher_bar` kind; production camera
+drivers; OpenAPI-generated frontend types. Each has a designated home — see
+`../roadmap.md` and the ADRs.

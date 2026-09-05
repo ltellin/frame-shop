@@ -22,6 +22,14 @@ class Settings(BaseSettings):
     # Echo SQL to the console (debugging only).
     db_echo: bool = False
 
+    # Where uploaded / captured artwork images are stored on disk.
+    media_dir: str = "./media"
+
+    # Which camera the design page's "Take photo" button triggers.
+    # "none" -> no camera configured (the endpoint returns 501). Real drivers
+    # (usb / gphoto2 / ip camera) register in app/capture/.
+    capture_source: str = "none"
+
 
 @lru_cache
 def get_settings() -> Settings:

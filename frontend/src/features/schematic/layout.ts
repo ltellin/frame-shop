@@ -9,6 +9,8 @@ export type PlacedLayer = {
   role: string
   label: string
   color: string
+  labelText: string
+  customerSupplied: boolean
   outline: string // polygon points for the layer face
   opening: string | null // polygon points for the visible window, if any
   labelAnchor: { x: number; y: number }
@@ -22,13 +24,18 @@ export type SchematicModel = {
   layers: PlacedLayer[]
 }
 
-const VIEW_W = 520
+const VIEW_W = 560
 const PAD = 28
 const GAP_Y = 46 // vertical spacing between exploded layers
 const GAP_X = 12 // slight horizontal drift; back layers sit to the right
 const SHEAR = 0.42 // top-edge shift as a fraction of layer height (the "angle")
-const LABEL_GUTTER = 160
-const MAX_LAYER_W = 190 // px cap for the widest layer
+const LABEL_GUTTER = 210
+const MAX_LAYER_W = 180 // px cap for the widest layer
+const MAX_LABEL = 26
+
+function trim(s: string): string {
+  return s.length > MAX_LABEL ? s.slice(0, MAX_LABEL - 1) + '…' : s
+}
 
 export function buildSchematic(layout: ExplodedLayout): SchematicModel {
   const ordered = [...layout.layers].sort((a, b) => a.z_index - b.z_index)
@@ -82,6 +89,8 @@ export function buildSchematic(layout: ExplodedLayout): SchematicModel {
       role: layer.layer_role,
       label: layer.label,
       color: roleColor(layer.layer_role),
+      labelText: trim(layer.label),
+      customerSupplied: layer.provenance === 'customer' && layer.kind !== 'artwork',
       outline,
       opening,
       labelAnchor,

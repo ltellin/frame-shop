@@ -39,7 +39,11 @@ class PricingProfile(Protocol):
 
     def price_layer(self, layer: LayerView, product: ProductResolution | None) -> LayerPrice: ...
 
+    def price_customer_supplied(self, layer: LayerView) -> LayerPrice: ...
+
     def design_level_lines(self, design: DesignSpec) -> list[ExtraLine]: ...
+
+    def price_sale_line(self, line: object) -> ExtraLine: ...
 
 
 # --- Placeholder implementation -------------------------------------------
@@ -77,11 +81,29 @@ class PlaceholderProfile:
     SERVICE_EACH = _D("25.00")
     FITTING_FEE = _D("28.00")
 
+    # Flat handling charge when the customer supplies the material.
+    COM_HANDLING = {
+        "moulding": _D("12.00"),
+        "glazing": _D("8.00"),
+        "mat": _D("6.00"),
+        "fillet": _D("4.00"),
+        "backing": _D("4.00"),
+        "fabric": _D("6.00"),
+    }
+    COM_HANDLING_DEFAULT = _D("5.00")
+
     def price_layer(self, layer: LayerView, product: ProductResolution | None) -> LayerPrice:
         method = getattr(self, f"_price_{layer.kind}", None)
         if method is None:
             return LayerPrice(0, "no charge")
         return method(layer, product)
+
+    def price_customer_supplied(self, layer: LayerView) -> LayerPrice:
+        fee = self.COM_HANDLING.get(layer.kind, self.COM_HANDLING_DEFAULT)
+        return LayerPrice(to_cents(fee), "customer-supplied — handling only (placeholder)")
+
+    def price_sale_line(self, line: object) -> ExtraLine:  # noqa: ARG002 - stub for later
+        raise NotImplementedError("sale-line pricing is not built yet")
 
     def design_level_lines(self, design: DesignSpec) -> list[ExtraLine]:
         return [

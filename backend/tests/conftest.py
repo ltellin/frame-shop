@@ -6,10 +6,20 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.config import get_settings
 from app.db import base as db_base
 from app.db.base import Base
 from app.db.models import Product, Vendor
 from app.main import create_app
+
+
+@pytest.fixture(autouse=True)
+def _media_dir(tmp_path, monkeypatch):
+    """Keep uploaded images out of the repo during tests."""
+    monkeypatch.setenv("FRAMESHOP_MEDIA_DIR", str(tmp_path / "media"))
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
 
 
 @pytest.fixture()

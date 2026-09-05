@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.base import get_session
-from app.domain.design.kinds import kind_catalog
+from app.domain.design.kinds import design_type_catalog, kind_catalog
 from app.services import catalog_service
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
@@ -14,6 +14,12 @@ router = APIRouter(prefix="/catalog", tags=["catalog"])
 def component_kinds() -> list[dict]:
     """Metadata + param schemas for the design editor's 'add component' picker."""
     return kind_catalog()
+
+
+@router.get("/design-types")
+def design_types() -> list[dict]:
+    """The design-type list + starter stacks for the 'what are you making?' picker."""
+    return design_type_catalog()
 
 
 @router.get("/vendors")

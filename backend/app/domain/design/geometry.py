@@ -12,11 +12,11 @@ from app.domain.design.spec import DesignSpec
 
 
 def walk_layers(design: DesignSpec) -> list[LayerView]:
-    """Walk components from the artwork outward, accumulating package size.
+    """Walk components from the base opening outward, accumulating package size.
 
     Returns layers in outside-to-inside order (sequence ascending).
     """
-    running = design.artwork.dimensions
+    running = design.base_dimensions
     inside_out: list[LayerView] = []
 
     for comp in design.ordered_inside_out():
@@ -33,6 +33,7 @@ def walk_layers(design: DesignSpec) -> list[LayerView]:
                 label=kind.outside_in_label(params, product_name),
                 params=params.model_dump(mode="json"),
                 geometry=geom,
+                provenance=comp.provenance,
             )
         )
         running = geom.outer

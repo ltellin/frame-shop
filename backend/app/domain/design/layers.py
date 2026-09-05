@@ -35,3 +35,4 @@ class LayerView:
     label: str
     params: dict
     geometry: LayerGeometry
+    provenance: str = "shop"  # shop | customer

@@ -4,7 +4,42 @@ Living document. Update it when a milestone lands or a decision changes. A fresh
 agent session should be able to read this + `architecture/overview.md` and know
 where things stand.
 
-_Last updated: 2026-09-05 — slice 1 + landing/nav shell._
+_Last updated: 2026-09-05 — slice 1.5 (design-workflow rework)._
+
+---
+
+## Slice 1.5 — design as universal fabrication spec — DONE
+
+ADR 0012 + 0013. Rework so a design can be started with zero upfront info and
+covers every shop scenario (quotes, trade, mat/glass-only, swap, repair).
+
+- **Schema**: dropped the `artwork` table (folded onto `design` as `base_*` +
+  `art_*`); `design` gains `type`, `quantity`, nullable `order_id` + `customer_id`;
+  `design_component.provenance`; new `design_image` table; `order.due_date` /
+  `po_number`; `customer.is_trade`. Statuses → `draft | accepted | discarded`.
+- **Domain**: geometry seeds from `base_dimensions`; art layer only when
+  `base_ref == 'art'`; services excluded from the schematic (`rendered`);
+  `DESIGN_TYPES` + `STARTER_STACKS`; customer-supplied handling pricing.
+- **API**: lenient `POST /api/designs` (loose draft OK); `to_read_model` reports
+  `complete: false` + a `summary` (finished size); `POST /api/designs/{id}/add-to-order`;
+  `/api/designs/{id}/images` (upload / list / serve / delete / **capture** → 501);
+  `/api/catalog/design-types`.
+- **Frontend**: `#/design/new` is a small "what + dimensions" gate that autosaves
+  the draft and drops into the editor; editor gained the **Piece panel** (type /
+  base dims / art / quantity / images), a **finished-size readout**, a
+  **Shop/Customer-supplied** toggle, an **Add-to-order dialog**, and
+  `#/orders/:id` **OrderDetail** with "add another design". Landing shows a
+  **Drafts** list. `NewDesign` form deleted.
+- Backend tests green; frontend tsc + build green; migration round-trips.
+
+### Known rough edges (not blockers)
+
+- Schematic still cramped with many layers; single-layer designs (mat-only) look
+  sparse. Presentation-only — `frontend/src/features/schematic/layout.ts`.
+- `src/api/types.ts` is hand-maintained — keep in sync with `to_read_model`.
+- `POST /api/designs` auto-creates on the frontend after a 700ms debounce on both
+  dimensions; a fat-fingered dimension makes a draft that's then corrected in the
+  editor. Acceptable; revisit if it annoys.
 
 ---
 
@@ -53,7 +88,8 @@ Design is in `architecture/domain-model.md` and ADRs 0004, 0005, 0009. Scope:
 
 1. `WorkOrder` model + `services/work_order_service` — accept a Design atomically:
    resolve catalog → price with pinned profile → write immutable snapshot JSON →
-   create `WorkOrder`(s) numbered `{order.number}-{n}` → lock the Design.
+   create `WorkOrder`(s) numbered `{order.number}-{n}` (one, or `quantity`) →
+   lock the Design.
 2. Migration for `work_order` (+ `production_state`, `payment_state`,
    `fulfillment_state` columns, default values only for now).
 3. `POST /api/designs/{id}/accept`; `GET /api/work-orders/{id}`; list on an Order.
@@ -71,6 +107,12 @@ graph, invoices — those are slice 3+.
 
 | Item | Where it will live | Notes |
 |---|---|---|
+| `order_sale_line` — retail material sold as-is | `order_service` + `OrderDetail`; `PricingProfile.price_sale_line` stub exists | ADR 0012 |
+| `stretcher_bar` kind + real `canvas_stretch` / `object_box` stacks | `kinds.py` registry + `STARTER_STACKS` | ADR 0012 |
+| `chop_only` type (linear-feet intake, no rectangle) | needs a non-`base_ref` intake | ADR 0012 |
+| Production camera driver (ceiling rig) | `app/capture/` — a new `CaptureSource` | ADR 0013 |
+| Image thumbnails / EXIF / named views | `image_service` + Pillow | ADR 0013 |
+| `Job` layer between Order and Design | migrate `type`/`quantity`/`order_id` off Design | ADR 0012 |
 | Payments, deposit (50% / full), Order subtotal/tax/balance | `Order` + `Payment` model, `order_service` | brief "intake workflow" step 6–7 |
 | Production task graph + derived `production_state` | `domain/production/`, `ProductionTask` model | ADR 0005; tiny hard-coded template |
 | Invoices, work-order sheets, labels, cut lists, "daily closing" lists | `domain/documents/` (derivation only) | all derived from canonical data; brief |
@@ -90,12 +132,14 @@ graph, invoices — those are slice 3+.
    e.g. a fillet *inside* a mat opening vs. simply beneath it. The early
    schematic is approximate on purpose. Revisit ADR 0003 before the schematic
    gets sophisticated or before production cut lists depend on exact nesting.
-2. **Artwork ownership** — currently Artwork belongs to the Order, referenced by
-   Design. If the shop workflow turns out to attach artwork to a Design or a
-   Work Order more naturally, this is a migration.
-3. **Quote as status vs entity** — `Design.status = quoted` today. A
-   customer-facing multi-piece quote *document* may later need Order-level
-   grouping.
+2. **Artwork ownership** — RESOLVED (ADR 0012): artwork is optional metadata on
+   the Design; no table. A first-class "Piece" may return at the Work Order
+   snapshot step if production tagging needs it.
+3. **Quote as status vs entity** — RESOLVED (ADR 0012): a quote is a printed
+   draft (`status = draft`, optionally with a `customer_id`). A customer-facing
+   multi-piece quote *document* would derive from an Order.
+6. **`base_ref` intake for non-rectangular jobs** — `chop_only` (linear feet) has
+   no `base_ref` that fits; kept out of the type list until built.
 4. **Snapshot granularity** — invoice totals (Order level) vs production spec
    (Work Order level). Rule: compute once at accept, store per Work Order, sum to
    the Order. Don't add a second computation path.

@@ -107,6 +107,9 @@ class ComponentKind:
     param_model: ClassVar[type[BaseModel]]
     default_layer_role: ClassVar[str]
     consumes_product: ClassVar[bool] = True
+    # Whether this component shows up as a layer in the schematic. Services /
+    # fees are real line items but not physical layers.
+    rendered: ClassVar[bool] = True
 
     def parse_params(self, raw: dict | None) -> BaseModel:
         return self.param_model.model_validate(raw or {})
@@ -280,6 +283,7 @@ class ServiceKind(ComponentKind):
     param_model = ServiceParams
     default_layer_role = "accent"
     consumes_product = False
+    rendered = False
 
     def geometry(self, params: ServiceParams, inner: Dimensions) -> LayerGeometry:
         return LayerGeometry(
@@ -348,3 +352,79 @@ def kind_catalog() -> list[dict]:
         }
         for k in _REGISTRY.values()
     ]
+
+
+# --- Design types + starter stacks ----------------------------------------
+#
+# `type` is a light tag: it picks which base dimension is asked for, whether the
+# artwork block is shown, and a starter component stack. It does NOT restrict
+# which components a design may contain. Production task templates key off it
+# later.
+
+DESIGN_TYPES: dict[str, dict] = {
+    "framing": {"label": "Framing", "base_ref": "art", "has_art": True},
+    "mat_only": {"label": "Mat only", "base_ref": "sight", "has_art": False},
+    "glazing_only": {"label": "Glass only", "base_ref": "glass", "has_art": False},
+    "frame_only": {"label": "Frame only", "base_ref": "rabbet", "has_art": False},
+    "canvas_stretch": {"label": "Canvas stretch", "base_ref": "art", "has_art": True},
+    "object_box": {"label": "Shadowbox", "base_ref": "art", "has_art": True},
+    "swap": {"label": "Art swap / reframe", "base_ref": "art", "has_art": True},
+    "repair": {"label": "Repair", "base_ref": "sight", "has_art": False},
+    "other": {"label": "Other", "base_ref": "sight", "has_art": False},
+}
+
+_S = "service"
+
+STARTER_STACKS: dict[str, list[dict]] = {
+    "framing": [
+        {"kind": "moulding"},
+        {"kind": "glazing"},
+        {"kind": "mat", "params": {"border_in": 2.5}},
+        {"kind": "mount", "params": {"method": "hinge"}},
+        {"kind": "backing", "params": {"material": "foamcore"}},
+    ],
+    "mat_only": [
+        {"kind": "mat", "params": {"border_in": 2.5}},
+        {"kind": _S, "params": {"description": "Cut mat"}},
+    ],
+    "glazing_only": [
+        {"kind": "glazing"},
+        {"kind": _S, "params": {"description": "Cut glazing to size"}},
+    ],
+    "frame_only": [
+        {"kind": "moulding"},
+        {"kind": _S, "params": {"description": "Join frame"}},
+    ],
+    "canvas_stretch": [
+        {"kind": _S, "params": {"description": "Build stretcher bars"}},
+        {"kind": _S, "params": {"description": "Stretch canvas"}},
+    ],
+    "object_box": [
+        {"kind": "moulding"},
+        {"kind": "glazing"},
+        {"kind": "spacer", "params": {"depth_in": 1.0}},
+        {"kind": "backing", "params": {"material": "foamcore"}},
+        {"kind": _S, "params": {"description": "Mount objects"}},
+    ],
+    "swap": [
+        {"kind": "moulding", "provenance": "customer"},
+        {"kind": _S, "params": {"description": "Fit to customer frame"}},
+    ],
+    "repair": [
+        {"kind": "moulding", "provenance": "customer"},
+        {"kind": "glazing"},
+        {"kind": _S, "params": {"description": "Remove & replace glazing, refit"}},
+    ],
+    "other": [],
+}
+
+
+def design_type_catalog() -> list[dict]:
+    return [
+        {"key": key, **meta, "starter_stack": STARTER_STACKS.get(key, [])}
+        for key, meta in DESIGN_TYPES.items()
+    ]
+
+
+def starter_stack(design_type: str) -> list[dict]:
+    return [dict(item) for item in STARTER_STACKS.get(design_type, [])]

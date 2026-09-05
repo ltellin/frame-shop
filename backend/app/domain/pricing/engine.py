@@ -54,6 +54,20 @@ def price_design(
         product = component.product if component else None
         kind = get_kind(layer.kind)
 
+        if layer.provenance == "customer":
+            notes.append(f"{layer.label}: customer-supplied — handling charge only.")
+            priced = profile.price_customer_supplied(layer)
+            lines.append(
+                PriceLine(
+                    component_id=layer.component_id,
+                    kind=layer.kind,
+                    label=layer.label,
+                    detail=priced.detail,
+                    amount_cents=priced.amount_cents,
+                )
+            )
+            continue
+
         if kind.consumes_product and product is None:
             notes.append(f"{layer.label}: no catalog product selected — used a placeholder rate.")
         if product and product.discontinued:

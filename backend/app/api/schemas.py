@@ -1,11 +1,12 @@
 """HTTP request/response schemas.
 
-Response bodies for the rich Design read model are plain dicts built in the
-service layer; these models cover request payloads and the simple list
-responses.
+The rich Design read model is a plain dict built in the service layer; these
+models cover request payloads and the simple list responses.
 """
 
 from __future__ import annotations
+
+from datetime import date
 
 from pydantic import BaseModel, Field
 
@@ -15,6 +16,7 @@ class CustomerCreate(BaseModel):
     phone: str | None = None
     email: str | None = None
     notes: str | None = None
+    is_trade: bool = False
 
 
 class CustomerRead(BaseModel):
@@ -26,23 +28,15 @@ class CustomerRead(BaseModel):
 
 class OrderCreate(BaseModel):
     customer_id: int
+    due_date: date | None = None
+    po_number: str | None = None
 
 
-class ArtworkCreate(BaseModel):
-    title: str = "Untitled"
-    width_in: str | float
-    height_in: str | float
-    depth_in: str | float | None = None
-    description: str | None = None
-    notes: str | None = None
-
-
-class ArtworkPatch(BaseModel):
+class ArtInput(BaseModel):
     title: str | None = None
-    width_in: str | float | None = None
-    height_in: str | float | None = None
-    depth_in: str | float | None = None
     description: str | None = None
+    art_type: str | None = None
+    depth_in: str | float | None = None
     notes: str | None = None
 
 
@@ -52,7 +46,35 @@ class ComponentInput(BaseModel):
     params: dict = Field(default_factory=dict)
     layer_role: str | None = None
     product_id: int | None = None
+    provenance: str | None = None  # shop | customer
     parent_index: int | None = None
+
+
+class DesignStart(BaseModel):
+    name: str | None = None
+    type: str | None = None
+    base_ref: str | None = None
+    base_width_in: str | float | None = None
+    base_height_in: str | float | None = None
+    art: ArtInput | None = None
+    quantity: int | None = None
+    customer_id: int | None = None
+    order_id: int | None = None
+    seed_starter: bool = False
+    components: list[ComponentInput] | None = None
+
+
+class DesignPatch(BaseModel):
+    name: str | None = None
+    status: str | None = None
+    type: str | None = None
+    base_ref: str | None = None
+    base_width_in: str | float | None = None
+    base_height_in: str | float | None = None
+    art: ArtInput | None = None
+    quantity: int | None = None
+    customer_id: int | None = None
+    components: list[ComponentInput] | None = None
 
 
 class NestedCustomer(BaseModel):
@@ -61,18 +83,9 @@ class NestedCustomer(BaseModel):
     email: str | None = None
 
 
-class DesignStart(BaseModel):
+class AddToOrder(BaseModel):
+    order_id: int | None = None
     customer_id: int | None = None
     customer: NestedCustomer | None = None
-    order_id: int | None = None
-    artwork_id: int | None = None
-    artwork: ArtworkCreate | None = None
-    name: str | None = None
-    components: list[ComponentInput] | None = None
-
-
-class DesignPatch(BaseModel):
-    name: str | None = None
-    status: str | None = None
-    artwork: ArtworkPatch | None = None
-    components: list[ComponentInput] | None = None
+    due_date: date | None = None
+    po_number: str | None = None

@@ -5,7 +5,7 @@ import { useDesignEditor } from '../../state/designEditor'
 import { fieldsFor } from './paramSchema'
 
 export function ComponentParamsPanel() {
-  const { design, selectedId, updateParams, setProduct } = useDesignEditor()
+  const { design, selectedId, updateParams, setProduct, setProvenance } = useDesignEditor()
   const kinds = useQuery({ queryKey: ['component-kinds'], queryFn: api.componentKinds })
 
   const component = design?.components.find((c) => c.id === selectedId) ?? null
@@ -20,16 +20,37 @@ export function ComponentParamsPanel() {
   }
 
   const meta = kinds.data?.find((k) => k.key === component.kind)
+  const customerSupplied = component.provenance === 'customer'
 
   return (
     <aside className="panel">
       <h3>{meta?.label ?? component.kind}</h3>
-      {meta?.consumes_product && (
-        <ProductPicker
-          kind={component.kind}
-          value={component.product_id}
-          onChange={(pid) => setProduct(component.id, pid)}
-        />
+
+      <div className="provenance-toggle">
+        <button
+          className={!customerSupplied ? 'seg active' : 'seg'}
+          onClick={() => setProvenance(component.id, 'shop')}
+        >
+          Shop supplied
+        </button>
+        <button
+          className={customerSupplied ? 'seg active' : 'seg'}
+          onClick={() => setProvenance(component.id, 'customer')}
+        >
+          Customer supplied
+        </button>
+      </div>
+
+      {customerSupplied ? (
+        <p className="muted">Customer-supplied — a handling charge applies, no material cost.</p>
+      ) : (
+        meta?.consumes_product && (
+          <ProductPicker
+            kind={component.kind}
+            value={component.product_id}
+            onChange={(pid) => setProduct(component.id, pid)}
+          />
+        )
       )}
       {meta && (
         <ParamFields

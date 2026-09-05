@@ -31,25 +31,34 @@ src/api/          client.ts (the ONLY place that calls the backend) + types.ts
 src/nav.ts        navigate(hash) — hash routing, no router library
 src/App.tsx       parseHash() route table + top-level render switch
 src/state/        designEditor.tsx — the one editable Design object + optimistic
-                  edit + debounced PATCH + reconcile. Both panes bind to this.
+                  edit + debounced PATCH + reconcile. Panes bind to this.
 src/features/
-  landing/        Landing.tsx — the home screen (Make a Design / Customers / Orders)
-  design/         NewDesign.tsx — start-a-design form + design list
-  design-editor/  ComponentList, ComponentParamsPanel (schema-driven), PricePanel
+  landing/        Landing.tsx — home screen + Drafts list
+  design/         NewDesignGate.tsx — pick type + base dimensions → creates the
+                  autosaved draft, then navigates to the editor
+  design-editor/  DesignEditor, PiecePanel (type/dims/art/qty/images),
+                  ImagesStrip, ComponentList, ComponentParamsPanel (+ shop/customer
+                  toggle), PricePanel, SizeReadout, AddToOrderDialog
   schematic/      Schematic.tsx + layout.ts (the SVG exploded view)
   customers/      Customers.tsx — list + quick add
-  orders/         Orders.tsx — order list + pieces, links into the editor
+  orders/         Orders.tsx (list) + OrderDetail.tsx (pieces + "add another design")
 src/theme.ts      ROLE_COLORS — shared layer vocabulary (list + schematic)
 ```
 
-Routes (hash): `#/` landing · `#/design/new` · `#/designs/:id` editor ·
-`#/customers` · `#/orders`.
+Routes (hash): `#/` · `#/design/new[?order=N]` gate · `#/designs/:id[?order=N]`
+editor · `#/customers` · `#/orders` · `#/orders/:id`.
 
 ## Conventions
 
-- Edit a component → update local state optimistically → the store debounce-PATCHes
-  the full component list → the backend response is authoritative and reconciles.
-- `types.ts` is maintained by hand for now. If the backend read model changes,
-  update `types.ts` in the same change. (Generating from OpenAPI is a deferred
-  nice-to-have — see `docs/roadmap.md`.)
+- **Getting to the design editor takes no upfront info** — the gate asks only
+  "what are you making?" + dimensions; entering both autosaves a draft (loose:
+  no customer, no order) and drops into the editor. Leaving keeps the draft.
+- The editor `design.complete` is `false` until base dims exist — panels show a
+  hint, not a crash.
+- Edit a component → optimistic local update → debounced full-list PATCH → the
+  backend response is authoritative and reconciles. Field edits (type, dims, art,
+  quantity, provenance) go through `patchFields` immediately.
+- `design.price` / `design.representations` / `design.summary` can be `null`.
+- `types.ts` is maintained by hand — update it with `to_read_model` in the same
+  change.
 - Keep `useDesignEditor` the single source of truth; panes are pure views.

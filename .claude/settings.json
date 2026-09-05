@@ -14,7 +14,45 @@
       "Bash(git diff:*)",
       "Bash(git log:*)",
       "Bash(curl -s http://localhost:*)",
-      "Bash(curl -s http://127.0.0.1:*)"
+      "Bash(curl -s http://127.0.0.1:*)",
+      "Bash(.venv/bin/pip install *)",
+      "Bash(.venv/bin/python -c \"import multipart; print\\('python-multipart ok'\\)\")",
+      "Bash(.venv/bin/alembic current *)",
+      "Bash(.venv/bin/alembic upgrade *)",
+      "Bash(.venv/bin/alembic revision *)",
+      "Bash(.venv/bin/python -c ' *)",
+      "Bash(.venv/bin/alembic downgrade *)",
+      "Bash(FRAMESHOP_DATABASE_URL=\"sqlite+pysqlite:////tmp/fresh.db\" .venv/bin/alembic upgrade head)",
+      "Bash(FRAMESHOP_DATABASE_URL=\"sqlite+pysqlite:////tmp/fresh.db\" .venv/bin/alembic downgrade base)",
+      "Bash(.venv/bin/python -c \"from app.main import app; print\\('import ok'\\); print\\([r.path for r in app.routes if hasattr\\(r,'path'\\) and 'image' in r.path]\\)\")",
+      "Bash(.venv/bin/python -c \"from app.main import app; print\\('import ok'\\); print\\(sorted\\({r.path for r in app.routes if hasattr\\(r,'path'\\) and 'design' in r.path}\\)\\)\")",
+      "Bash(.venv/bin/python -c \"from app.main import app; print\\('import ok'\\); print\\(sorted\\({r.path for r in app.routes if hasattr\\(r,'path'\\) and 'image' in r.path}\\)\\)\")",
+      "Bash(.venv/bin/python -m pytest tests/test_pricing.py tests/test_representations.py tests/test_measure.py -q)",
+      "Bash(.venv/bin/python -m pytest tests/test_design_service.py -q)",
+      "Bash(.venv/bin/python -m app.seed.sample_catalog)",
+      "Bash(xargs kill -9)",
+      "Bash(.venv/bin/uvicorn app.main:app --port 8000 --log-level warning)",
+      "Bash(curl -s localhost:8000/api/health)",
+      "Bash(curl -s -X POST localhost:8000/api/designs -H 'content-type: application/json' -d '{\"type\":\"mat_only\"}')",
+      "Bash(python3 -c \"import json,sys;d=json.load\\(sys.stdin\\);print\\('id',d['id'],'complete',d['complete'],'base_ref',d['base_ref'],'order',d['order_id']\\)\")",
+      "Bash(curl -s -X PATCH localhost:8000/api/designs/1 -H 'content-type: application/json' -d '{\"base_width_in\":\"20 1/2\",\"base_height_in\":\"24\",\"components\":[{\"kind\":\"mat\",\"params\":{\"border_in\":3}},{\"kind\":\"service\",\"params\":{\"description\":\"Cut mat\"}}]}')",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s -X POST localhost:8000/api/designs/1/add-to-order -H 'content-type: application/json' -d '{\"customer\":{\"name\":\"Dana Frame\",\"phone\":\"555-2020\"}}')",
+      "Bash(python3 -c \"import json,sys;d=json.load\\(sys.stdin\\);print\\('order',d['order_number'],'design.order_id',d['design']['order_id'],'customer',d['design']['customer_name']\\)\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" -X POST localhost:8000/api/designs/1/images/capture)",
+      "Bash(cd /Users/lawtontellin/Projects/frame-shop/frontend && npx tsc -b 2>&1 | head -20 && npm run build 2>&1 | tail -4 && cd ../backend && .venv/bin/python -m pytest -q 2>&1 | grep -E \"passed|failed|error\" && .venv/bin/ruff check . 2>&1 | tail -3)",
+      "Read(//Users/lawtontellin/Projects/**)",
+      "Bash(curl -s -o /dev/null -w \"api:%{http_code}\\\\n\" localhost:8000/api/health)",
+      "Bash(curl -s -o /dev/null -w \"api:%{http_code} web:%{http_code}\\\\n\" localhost:8000/api/health)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" localhost:5173)",
+      "Bash(cd /Users/lawtontellin/Projects/frame-shop/backend && .venv/bin/python -m pytest -q 2>&1 | grep -E \"passed|failed\" ; .venv/bin/ruff check . 2>&1 | tail -2 ; cd ../frontend && npx tsc -b 2>&1 | tail -5 && npm run build 2>&1 | tail -3)",
+      "Bash(rm -f frameshop.db)",
+      "Bash(FRAMESHOP_DATABASE_URL=\"sqlite+pysqlite:////tmp/ck.db\" .venv/bin/alembic upgrade head)",
+      "Bash(FRAMESHOP_DATABASE_URL=\"sqlite+pysqlite:////tmp/ck.db\" .venv/bin/alembic downgrade base)",
+      "Bash(rm -f /tmp/ck.db)",
+      "Bash('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser' --headless=new --disable-gpu --hide-scrollbars --window-size=1600,1050 --virtual-time-budget=5000 --screenshot=/private/tmp/claude-501/-Users-lawtontellin-Projects-frame-shop/4442ebbc-f5fa-4e3c-aa7e-f1320eb32066/scratchpad/final-framing.png 'http://localhost:5173/#/designs/1')",
+      "Bash('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser' --headless=new --disable-gpu --hide-scrollbars --window-size=1600,1050 --virtual-time-budget=4000 --screenshot=/private/tmp/claude-501/-Users-lawtontellin-Projects-frame-shop/4442ebbc-f5fa-4e3c-aa7e-f1320eb32066/scratchpad/final-landing.png 'http://localhost:5173/#/')",
+      "Bash(git commit -q -m ' *)"
     ]
   },
   "hooks": {
@@ -25,6 +63,16 @@
           {
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/format.sh"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay /System/Library/Sounds/Glass.aiff"
           }
         ]
       }

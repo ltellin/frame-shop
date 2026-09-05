@@ -6,6 +6,17 @@ export function PricePanel() {
   if (!design) return null
   const { price } = design
 
+  if (!price) {
+    return (
+      <section className="panel price-panel">
+        <div className="panel-head">
+          <h3>Price</h3>
+        </div>
+        <p className="muted">Enter the piece dimensions to see pricing.</p>
+      </section>
+    )
+  }
+
   return (
     <section className="panel price-panel">
       <div className="panel-head">

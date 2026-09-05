@@ -2,26 +2,34 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import { navigate } from './nav'
 import { Customers } from './features/customers/Customers'
-import { NewDesign } from './features/design/NewDesign'
+import { NewDesignGate } from './features/design/NewDesignGate'
 import { DesignEditor } from './features/design-editor/DesignEditor'
 import { Landing } from './features/landing/Landing'
+import { OrderDetail } from './features/orders/OrderDetail'
 import { Orders } from './features/orders/Orders'
 
 // Minimal hash routing — no router library (see frontend/CLAUDE.md).
 type Route =
   | { name: 'landing' }
-  | { name: 'new-design' }
-  | { name: 'design'; id: number }
+  | { name: 'new-design'; order?: number }
+  | { name: 'design'; id: number; order?: number }
   | { name: 'customers' }
   | { name: 'orders' }
+  | { name: 'order'; id: number }
 
 function parseHash(): Route {
-  const h = window.location.hash.replace(/^#/, '')
-  const design = h.match(/^\/designs\/(\d+)/)
-  if (design) return { name: 'design', id: Number(design[1]) }
-  if (h === '/design/new') return { name: 'new-design' }
-  if (h === '/customers') return { name: 'customers' }
-  if (h === '/orders') return { name: 'orders' }
+  const raw = window.location.hash.replace(/^#/, '')
+  const [path, queryStr] = raw.split('?')
+  const query = new URLSearchParams(queryStr)
+  const order = query.has('order') ? Number(query.get('order')) : undefined
+
+  const design = path.match(/^\/designs\/(\d+)/)
+  if (design) return { name: 'design', id: Number(design[1]), order }
+  const orderPage = path.match(/^\/orders\/(\d+)/)
+  if (orderPage) return { name: 'order', id: Number(orderPage[1]) }
+  if (path === '/design/new') return { name: 'new-design', order }
+  if (path === '/customers') return { name: 'customers' }
+  if (path === '/orders') return { name: 'orders' }
   return { name: 'landing' }
 }
 
@@ -34,8 +42,6 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
 
-  const openDesign = (id: number) => navigate(`/designs/${id}`)
-
   return (
     <div className="app">
       <header className="app-bar">
@@ -46,16 +52,13 @@ export default function App() {
       </header>
       <main>
         {route.name === 'landing' && <Landing />}
-        {route.name === 'new-design' && <NewDesign onOpen={openDesign} />}
+        {route.name === 'new-design' && <NewDesignGate attachOrderId={route.order} />}
         {route.name === 'design' && (
-          <DesignEditor
-            key={route.id}
-            designId={route.id}
-            onExit={() => navigate('/design/new')}
-          />
+          <DesignEditor key={route.id} designId={route.id} attachOrderId={route.order} />
         )}
         {route.name === 'customers' && <Customers />}
-        {route.name === 'orders' && <Orders onOpenDesign={openDesign} />}
+        {route.name === 'orders' && <Orders />}
+        {route.name === 'order' && <OrderDetail key={route.id} orderId={route.id} />}
       </main>
     </div>
   )

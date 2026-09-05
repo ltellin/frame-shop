@@ -1,5 +1,9 @@
-"""Design use-cases: create, load, edit components, (re)price, and build the
-read model the API returns.
+"""Design use-cases: create, load, edit, (re)price, attach to an order, and build
+the read model the API returns.
+
+A Design is the universal fabrication spec. It may be a loose draft (no order, no
+customer). It is only priced / rendered once it has real base dimensions — until
+then the read model reports ``complete: false``.
 
 All framing/pricing behaviour is delegated to the domain layer. This module only
 orchestrates: DB rows in, domain calls, DB rows + read model out.
@@ -12,75 +16,62 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.db.models import Artwork, Design, DesignComponent
-from app.domain.design.kinds import get_kind
+from app.db.models import Design, DesignComponent
+from app.domain.design.kinds import DESIGN_TYPES, get_kind, starter_stack
 from app.domain.design.representations import to_exploded_layout, to_outside_in_list
 from app.domain.design.spec import ArtworkSpec, ComponentSpec, DesignSpec
+from app.domain.measure import parse_inches
 from app.domain.pricing.engine import price_design
 from app.services import catalog_service, order_service
 from app.services.errors import DomainValidationError, NotFoundError
 
-EDITABLE_STATUSES = {"draft", "held", "quoted"}
-ALL_STATUSES = {"draft", "held", "quoted", "accepted", "discarded"}
+EDITABLE_STATUSES = {"draft"}
+ALL_STATUSES = {"draft", "accepted", "discarded"}
+
+_ART_FIELDS = ("art_title", "art_description", "art_type", "art_notes")
 
 
 # --- create / load --------------------------------------------------------
 
 
 def start_design(session: Session, payload: dict) -> Design:
-    """Convenience entry point for the counter: resolve/creates customer ->
-    order -> artwork -> design in one call."""
-    customer_id = payload.get("customer_id")
-    if customer_id is None:
-        cust = payload.get("customer") or {}
-        if not cust.get("name"):
-            raise DomainValidationError("customer_id or customer.name is required")
-        customer = order_service.create_customer(
-            session, name=cust["name"], phone=cust.get("phone"), email=cust.get("email")
-        )
-        customer_id = customer.id
-    else:
-        order_service.get_customer(session, customer_id)
-
-    order_id = payload.get("order_id")
-    if order_id is None:
-        order = order_service.get_or_create_draft_order(session, customer_id=customer_id)
-        order_id = order.id
-    else:
-        order_service.get_order(session, order_id)
-
-    art = payload.get("artwork") or {}
-    artwork_id = payload.get("artwork_id")
-    if artwork_id is None:
-        if art.get("width_in") is None or art.get("height_in") is None:
-            raise DomainValidationError("artwork.width_in and artwork.height_in are required")
-        artwork = order_service.add_artwork(
-            session,
-            order_id=order_id,
-            title=art.get("title") or "Untitled",
-            width_in=art["width_in"],
-            height_in=art["height_in"],
-            depth_in=art.get("depth_in"),
-            description=art.get("description"),
-            notes=art.get("notes"),
-        )
-        artwork_id = artwork.id
-    else:
-        if session.get(Artwork, artwork_id) is None:
-            raise NotFoundError(f"artwork {artwork_id} not found")
+    """Create a draft design. Everything is optional — a loose draft with just a
+    type is valid; components/price/representations appear once base dimensions
+    are set."""
+    design_type = payload.get("type") or "framing"
+    if design_type not in DESIGN_TYPES:
+        raise DomainValidationError(f"unknown design type: {design_type!r}")
 
     design = Design(
-        order_id=order_id,
-        artwork_id=artwork_id,
         name=payload.get("name") or "Design",
+        type=design_type,
         status="draft",
+        base_ref=payload.get("base_ref") or DESIGN_TYPES[design_type]["base_ref"],
+        quantity=int(payload.get("quantity") or 1),
     )
+
+    customer_id = payload.get("customer_id")
+    if customer_id is not None:
+        order_service.get_customer(session, customer_id)
+        design.customer_id = customer_id
+
+    order_id = payload.get("order_id")
+    if order_id is not None:
+        design.order_id = order_service.get_order(session, order_id).id
+
+    _apply_base(design, payload)
+    _apply_art(design, payload.get("art") or {})
+
     session.add(design)
     session.flush()
 
-    if payload.get("components"):
-        replace_components(session, design, payload["components"])
-    recompute_price(session, design)
+    components = payload.get("components")
+    if components is None and payload.get("seed_starter"):
+        components = starter_stack(design_type)
+    if components:
+        replace_components(session, design, components)
+
+    _reprice_if_complete(session, design)
     return design
 
 
@@ -91,10 +82,14 @@ def get_design(session: Session, design_id: int) -> Design:
     return design
 
 
-def list_designs(session: Session, *, order_id: int | None = None) -> list[Design]:
-    stmt = select(Design).order_by(Design.id.desc())
+def list_designs(
+    session: Session, *, order_id: int | None = None, loose: bool | None = None
+) -> list[Design]:
+    stmt = select(Design).order_by(Design.updated_at.desc(), Design.id.desc())
     if order_id is not None:
         stmt = stmt.where(Design.order_id == order_id)
+    if loose:
+        stmt = stmt.where(Design.order_id.is_(None), Design.status == "draft")
     return list(session.scalars(stmt))
 
 
@@ -107,31 +102,80 @@ def _require_editable(design: Design) -> None:
 
 
 def update_design(session: Session, design: Design, patch: dict) -> Design:
-    if "status" in patch and patch["status"] is not None:
+    if patch.get("status") is not None:
         _set_status(design, patch["status"])
 
-    if any(k in patch for k in ("name", "artwork", "components")):
+    editing_keys = (
+        "name",
+        "type",
+        "base_ref",
+        "base_width_in",
+        "base_height_in",
+        "art",
+        "quantity",
+        "customer_id",
+        "components",
+    )
+    if any(k in patch for k in editing_keys):
         _require_editable(design)
 
     if patch.get("name") is not None:
         design.name = patch["name"]
 
-    if patch.get("artwork") is not None:
-        order_service.update_artwork(session, design.artwork, patch["artwork"])
+    if patch.get("type") is not None:
+        new_type = patch["type"]
+        if new_type not in DESIGN_TYPES:
+            raise DomainValidationError(f"unknown design type: {new_type!r}")
+        reseed = design.type != new_type and not design.components and "components" not in patch
+        design.type = new_type
+        if "base_ref" not in patch:
+            design.base_ref = DESIGN_TYPES[new_type]["base_ref"]
+        if reseed:
+            replace_components(session, design, starter_stack(new_type))
+
+    if patch.get("base_ref") is not None:
+        design.base_ref = patch["base_ref"]
+    if "customer_id" in patch:
+        cid = patch["customer_id"]
+        if cid is not None:
+            order_service.get_customer(session, cid)
+        design.customer_id = cid
+    if patch.get("quantity") is not None:
+        design.quantity = max(1, int(patch["quantity"]))
+
+    _apply_base(design, patch)
+    if patch.get("art") is not None:
+        _apply_art(design, patch["art"])
 
     if patch.get("components") is not None:
         replace_components(session, design, patch["components"])
 
     design.version += 1
     session.flush()
-    recompute_price(session, design)
+    _reprice_if_complete(session, design)
     return design
+
+
+def _apply_base(design: Design, src: dict) -> None:
+    if "base_width_in" in src:
+        design.base_width_in = _opt_inches(src["base_width_in"])
+    if "base_height_in" in src:
+        design.base_height_in = _opt_inches(src["base_height_in"])
+
+
+def _apply_art(design: Design, art: dict) -> None:
+    for field in _ART_FIELDS:
+        key = field.removeprefix("art_")
+        if key in art:
+            setattr(design, field, art[key] or None)
+    if "depth_in" in art:
+        design.art_depth_in = _opt_inches(art["depth_in"])
 
 
 def _set_status(design: Design, new_status: str) -> None:
     if new_status not in ALL_STATUSES:
         raise DomainValidationError(f"unknown status: {new_status!r}")
-    if design.status in ("accepted",) and new_status != "accepted":
+    if design.status == "accepted" and new_status != "accepted":
         raise DomainValidationError("an accepted design is locked")
     design.status = new_status
 
@@ -162,6 +206,10 @@ def replace_components(session: Session, design: Design, items: list[dict]) -> N
         if product_id is not None and catalog_service.get_product(session, product_id) is None:
             raise DomainValidationError(f"product {product_id} not found")
 
+        provenance = item.get("provenance") or "shop"
+        if provenance not in ("shop", "customer"):
+            raise DomainValidationError(f"unknown provenance: {provenance!r}")
+
         comp_id = item.get("id")
         component = existing.get(comp_id) if comp_id is not None else None
         if component is None:
@@ -175,6 +223,7 @@ def replace_components(session: Session, design: Design, items: list[dict]) -> N
         component.layer_role = item.get("layer_role")
         component.params = params
         component.product_id = product_id
+        component.provenance = provenance
         ordered.append(component)
 
     for comp_id, component in existing.items():
@@ -199,17 +248,61 @@ def replace_components(session: Session, design: Design, items: list[dict]) -> N
     session.flush()
 
 
-# --- pricing ------------------------------------------------------------
+# --- add to order -----------------------------------------------------
+
+
+def add_to_order(
+    session: Session,
+    design: Design,
+    *,
+    order_id: int | None = None,
+    customer_id: int | None = None,
+    customer: dict | None = None,
+    due_date=None,
+    po_number: str | None = None,
+) -> object:
+    if design.order_id is not None:
+        raise DomainValidationError(f"design {design.id} is already on order {design.order_id}")
+
+    if order_id is not None:
+        order = order_service.get_order(session, order_id)
+    else:
+        if customer_id is None:
+            customer = customer or {}
+            if not customer.get("name"):
+                raise DomainValidationError("order_id, customer_id, or customer.name is required")
+            customer_id = order_service.create_customer(
+                session,
+                name=customer["name"],
+                phone=customer.get("phone"),
+                email=customer.get("email"),
+            ).id
+        order = order_service.get_or_create_open_order(
+            session, customer_id=customer_id, due_date=due_date, po_number=po_number
+        )
+
+    design.order_id = order.id
+    design.customer_id = order.customer_id
+    session.flush()
+    return order
+
+
+# --- pricing / spec --------------------------------------------------
+
+
+def _is_complete(design: Design) -> bool:
+    return design.base_width_in is not None and design.base_height_in is not None
 
 
 def build_spec(session: Session, design: Design) -> DesignSpec:
-    artwork = design.artwork
-    art_spec = ArtworkSpec(
-        title=artwork.title,
-        width_in=artwork.width_in,
-        height_in=artwork.height_in,
-        depth_in=artwork.depth_in,
-    )
+    art = None
+    if any(getattr(design, f) for f in (*_ART_FIELDS, "art_depth_in")):
+        art = ArtworkSpec(
+            title=design.art_title,
+            art_type=design.art_type,
+            depth_in=design.art_depth_in,
+            notes=design.art_notes,
+        )
     components = tuple(
         ComponentSpec(
             id=c.id,
@@ -218,14 +311,29 @@ def build_spec(session: Session, design: Design) -> DesignSpec:
             params=c.params or {},
             layer_role=c.layer_role,
             product=catalog_service.resolve(session, c.product_id),
+            provenance=c.provenance,
             parent_component_id=c.parent_component_id,
         )
         for c in sorted(design.components, key=lambda c: c.sequence)
     )
-    return DesignSpec(id=design.id, artwork=art_spec, components=components)
+    return DesignSpec(
+        id=design.id,
+        base_width_in=design.base_width_in,
+        base_height_in=design.base_height_in,
+        base_ref=design.base_ref,
+        type=design.type,
+        quantity=design.quantity,
+        artwork=art,
+        components=components,
+    )
 
 
-def recompute_price(session: Session, design: Design) -> dict:
+def _reprice_if_complete(session: Session, design: Design) -> None:
+    if not _is_complete(design):
+        design.price_breakdown = None
+        design.priced_at = None
+        session.flush()
+        return
     spec = build_spec(session, design)
     breakdown = price_design(spec)
     design.price_breakdown = breakdown.as_dict()
@@ -233,57 +341,95 @@ def recompute_price(session: Session, design: Design) -> dict:
     design.pricing_profile_id = breakdown.profile_id
     design.pricing_profile_version = breakdown.profile_version
     session.flush()
-    return design.price_breakdown
 
 
 # --- read model --------------------------------------------------------
 
 
+def _summary(spec: DesignSpec, exploded: dict) -> dict:
+    bounds = exploded["bounds"]
+    return {
+        "finished_width_in": bounds["width_in"],
+        "finished_height_in": bounds["height_in"],
+        "united_in": round(bounds["width_in"] + bounds["height_in"], 2),
+        "base_width_in": float(spec.base_width_in),
+        "base_height_in": float(spec.base_height_in),
+        "quantity": spec.quantity,
+    }
+
+
 def to_read_model(session: Session, design: Design) -> dict:
+    base = {
+        "id": design.id,
+        "name": design.name,
+        "type": design.type,
+        "status": design.status,
+        "editable": design.status in EDITABLE_STATUSES,
+        "version": design.version,
+        "order_id": design.order_id,
+        "customer_id": design.customer_id,
+        "customer_name": design.customer.name if design.customer else None,
+        "quantity": design.quantity,
+        "base_ref": design.base_ref,
+        "base_width_in": float(design.base_width_in) if design.base_width_in is not None else None,
+        "base_height_in": float(design.base_height_in)
+        if design.base_height_in is not None
+        else None,
+        "art": {
+            "title": design.art_title,
+            "description": design.art_description,
+            "art_type": design.art_type,
+            "depth_in": float(design.art_depth_in) if design.art_depth_in is not None else None,
+            "notes": design.art_notes,
+        },
+        "updated_at": design.updated_at.isoformat() if design.updated_at else None,
+        "images": [image_read_dict(design.id, img) for img in design.images],
+        "components": [
+            _component_dict(session, c) for c in sorted(design.components, key=lambda c: c.sequence)
+        ],
+    }
+
+    if not _is_complete(design):
+        base.update(complete=False, price=None, representations=None, summary=None, warnings=[])
+        return base
+
     spec = build_spec(session, design)
     breakdown = price_design(spec)
+    exploded = to_exploded_layout(spec)
+    base.update(
+        complete=True,
+        price=breakdown.as_dict(),
+        representations={"outside_in": to_outside_in_list(spec), "exploded": exploded},
+        summary=_summary(spec, exploded),
+        warnings=_warnings(spec),
+    )
+    return base
 
-    components = []
-    for c in sorted(design.components, key=lambda c: c.sequence):
-        resolution = catalog_service.resolve(session, c.product_id)
-        components.append(
-            {
-                "id": c.id,
-                "kind": c.kind,
-                "sequence": c.sequence,
-                "layer_role": c.layer_role or get_kind(c.kind).default_layer_role,
-                "params": c.params or {},
-                "product_id": c.product_id,
-                "parent_component_id": c.parent_component_id,
-                "product": _product_summary(resolution),
-            }
-        )
 
+def _component_dict(session: Session, c: DesignComponent) -> dict:
+    resolution = catalog_service.resolve(session, c.product_id)
     return {
-        "id": design.id,
-        "order_id": design.order_id,
-        "artwork_id": design.artwork_id,
-        "name": design.name,
-        "status": design.status,
-        "version": design.version,
-        "editable": design.status in EDITABLE_STATUSES,
-        "updated_at": design.updated_at.isoformat() if design.updated_at else None,
-        "artwork": {
-            "id": design.artwork.id,
-            "title": design.artwork.title,
-            "description": design.artwork.description,
-            "width_in": float(design.artwork.width_in),
-            "height_in": float(design.artwork.height_in),
-            "depth_in": float(design.artwork.depth_in) if design.artwork.depth_in else None,
-            "notes": design.artwork.notes,
-        },
-        "components": components,
-        "price": breakdown.as_dict(),
-        "representations": {
-            "outside_in": to_outside_in_list(spec),
-            "exploded": to_exploded_layout(spec),
-        },
-        "warnings": _warnings(session, spec),
+        "id": c.id,
+        "kind": c.kind,
+        "sequence": c.sequence,
+        "layer_role": c.layer_role or get_kind(c.kind).default_layer_role,
+        "params": c.params or {},
+        "product_id": c.product_id,
+        "provenance": c.provenance,
+        "parent_component_id": c.parent_component_id,
+        "product": _product_summary(resolution),
+    }
+
+
+def image_read_dict(design_id: int, img) -> dict:
+    return {
+        "id": img.id,
+        "image_id": img.image_id,
+        "url": f"/api/designs/{design_id}/images/{img.image_id}",
+        "source": img.source,
+        "is_primary": img.is_primary,
+        "content_type": img.content_type,
+        "created_at": img.created_at.isoformat() if img.created_at else None,
     }
 
 
@@ -302,10 +448,10 @@ def _product_summary(resolution) -> dict | None:
     }
 
 
-def _warnings(session: Session, spec: DesignSpec) -> list[str]:
+def _warnings(spec: DesignSpec) -> list[str]:
     out: list[str] = []
     for comp in spec.components:
-        if comp.product is None:
+        if comp.provenance == "customer" or comp.product is None:
             continue
         if comp.product.discontinued:
             out.append(f"'{comp.product.name}' is discontinued but is used in this design.")
@@ -314,3 +460,7 @@ def _warnings(session: Session, spec: DesignSpec) -> list[str]:
     if not spec.components:
         out.append("This design has no components yet.")
     return out
+
+
+def _opt_inches(value):
+    return None if value is None or value == "" else parse_inches(value)

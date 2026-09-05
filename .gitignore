@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 backend/*.db
 backend/.env
+backend/media/
 backend/*.egg-info/
 backend/.pytest_cache/
 backend/.ruff_cache/
