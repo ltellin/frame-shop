@@ -4,6 +4,7 @@ Money is stored and passed around as an integer number of cents. Never use float
 for money. Rounding happens explicitly, once, when a computed amount is turned
 into cents.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

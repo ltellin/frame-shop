@@ -4,6 +4,7 @@ This is the seam where live vendor catalog data enters the system. Real vendor
 imports would land here (a future ``app/catalog/adapters/`` writing Product rows);
 everything downstream just sees Product rows and ProductResolution value objects.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import select

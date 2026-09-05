@@ -3,6 +3,7 @@
 Both the pricing engine and the representation functions consume this so that
 geometry logic lives in exactly one place.
 """
+
 from __future__ import annotations
 
 from app.domain.design.kinds import get_kind

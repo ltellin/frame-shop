@@ -24,9 +24,17 @@ def test_design_lifecycle(client, seeded_catalog):
             "customer": {"name": "Grace"},
             "artwork": {"title": "Blueprint", "width_in": "18", "height_in": "24"},
             "components": [
-                {"kind": "moulding", "product_id": seeded_catalog["moulding"], "params": {"face_in": "1.25"}},
+                {
+                    "kind": "moulding",
+                    "product_id": seeded_catalog["moulding"],
+                    "params": {"face_in": "1.25"},
+                },
                 {"kind": "glazing", "product_id": seeded_catalog["glazing"], "params": {}},
-                {"kind": "mat", "product_id": seeded_catalog["mat"], "params": {"border_in": "2.5"}},
+                {
+                    "kind": "mat",
+                    "product_id": seeded_catalog["mat"],
+                    "params": {"border_in": "2.5"},
+                },
                 {"kind": "backing", "params": {"material": "foamcore"}},
             ],
         },
@@ -46,10 +54,17 @@ def test_design_lifecycle(client, seeded_catalog):
     mat["params"]["border_in"] = "4"
     patch = client.patch(
         f"/api/designs/{design_id}",
-        json={"components": [
-            {"id": c["id"], "kind": c["kind"], "params": c["params"], "product_id": c["product_id"]}
-            for c in comps
-        ]},
+        json={
+            "components": [
+                {
+                    "id": c["id"],
+                    "kind": c["kind"],
+                    "params": c["params"],
+                    "product_id": c["product_id"],
+                }
+                for c in comps
+            ]
+        },
     )
     assert patch.status_code == 200, patch.text
     assert patch.json()["price"]["subtotal_cents"] != design["price"]["subtotal_cents"]

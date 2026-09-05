@@ -14,6 +14,7 @@ The geometry math here is deliberately simple placeholder logic. It is good
 enough to drive a schematic and a demo price; it is not a faithful model of
 shop cutting allowances. Replacing it must not require touching the Design model.
 """
+
 from __future__ import annotations
 
 from decimal import Decimal
@@ -62,14 +63,14 @@ class FilletParams(BaseModel):
 
 class GlazingParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    grade_label: str | None = Field(default=None, description="e.g. regular / conservation / museum")
+    grade_label: str | None = Field(
+        default=None, description="e.g. regular / conservation / museum"
+    )
 
 
 class MountParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    method: Literal[
-        "pressure_mount", "hinge", "photo_corners", "dry_mount", "float"
-    ] = "hinge"
+    method: Literal["pressure_mount", "hinge", "photo_corners", "dry_mount", "float"] = "hinge"
 
 
 class BackingParams(BaseModel):
@@ -177,7 +178,7 @@ class MatKind(ComponentKind):
 
     def outside_in_label(self, params: MatParams, product_name: str | None) -> str:
         base = product_name or params.color_label or "Mat"
-        return f"{base} — {params.border_in}\" border"
+        return f'{base} — {params.border_in}" border'
 
 
 class FilletKind(ComponentKind):
@@ -257,8 +258,12 @@ class SpacerKind(ComponentKind):
 
     def geometry(self, params: SpacerParams, inner: Dimensions) -> LayerGeometry:
         return LayerGeometry(
-            inner=inner, outer=inner, self_size=inner, opening=None,
-            linear_in=inner.perimeter_in, area_sqin=Decimal(0),
+            inner=inner,
+            outer=inner,
+            self_size=inner,
+            opening=None,
+            linear_in=inner.perimeter_in,
+            area_sqin=Decimal(0),
         )
 
 
@@ -278,8 +283,12 @@ class ServiceKind(ComponentKind):
 
     def geometry(self, params: ServiceParams, inner: Dimensions) -> LayerGeometry:
         return LayerGeometry(
-            inner=inner, outer=inner, self_size=inner, opening=None,
-            linear_in=Decimal(0), area_sqin=Decimal(0),
+            inner=inner,
+            outer=inner,
+            self_size=inner,
+            opening=None,
+            linear_in=Decimal(0),
+            area_sqin=Decimal(0),
         )
 
     def outside_in_label(self, params: ServiceParams, product_name: str | None) -> str:
@@ -302,8 +311,16 @@ def register(kind: ComponentKind) -> None:
 
 
 for _cls in (
-    MouldingKind, MatKind, FilletKind, GlazingKind, MountKind,
-    BackingKind, SpacerKind, FabricKind, ServiceKind, OtherKind,
+    MouldingKind,
+    MatKind,
+    FilletKind,
+    GlazingKind,
+    MountKind,
+    BackingKind,
+    SpacerKind,
+    FabricKind,
+    ServiceKind,
+    OtherKind,
 ):
     register(_cls())
 

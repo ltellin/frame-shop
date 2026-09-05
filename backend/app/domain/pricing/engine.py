@@ -6,6 +6,7 @@ Output: a PriceBreakdown value object. No I/O, no ORM, no persistence.
 The engine walks the same layer model the schematic uses, so geometry stays in
 one place.
 """
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field

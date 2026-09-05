@@ -4,6 +4,7 @@ Minimal for the first slice. The Order exists so that multiple pieces from one
 visit group correctly later; for now it is a lightweight container created on
 demand.
 """
+
 from __future__ import annotations
 
 from decimal import Decimal
@@ -19,7 +20,11 @@ _FIRST_ORDER_NUMBER = 5271  # nod to the brief's example
 
 
 def create_customer(
-    session: Session, *, name: str, phone: str | None = None, email: str | None = None,
+    session: Session,
+    *,
+    name: str,
+    phone: str | None = None,
+    email: str | None = None,
     notes: str | None = None,
 ) -> Customer:
     customer = Customer(name=name, phone=phone, email=email, notes=notes)
@@ -69,8 +74,15 @@ def get_or_create_draft_order(session: Session, *, customer_id: int) -> Order:
 
 
 def add_artwork(
-    session: Session, *, order_id: int, title: str, width_in, height_in,
-    depth_in=None, description: str | None = None, notes: str | None = None,
+    session: Session,
+    *,
+    order_id: int,
+    title: str,
+    width_in,
+    height_in,
+    depth_in=None,
+    description: str | None = None,
+    notes: str | None = None,
 ) -> Artwork:
     get_order(session, order_id)
     artwork = Artwork(

@@ -11,7 +11,9 @@ router = APIRouter(prefix="/designs", tags=["designs"])
 
 
 @router.get("")
-def list_designs(order_id: int | None = None, session: Session = Depends(get_session)) -> list[dict]:
+def list_designs(
+    order_id: int | None = None, session: Session = Depends(get_session)
+) -> list[dict]:
     designs = design_service.list_designs(session, order_id=order_id)
     return [
         {

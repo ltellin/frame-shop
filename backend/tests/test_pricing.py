@@ -41,9 +41,7 @@ def test_mat_then_moulding_accumulates_size():
 
 
 def test_bigger_art_costs_more():
-    small = price_design(
-        _design([ComponentSpec(id=1, kind="glazing", sequence=1, params={})])
-    )
+    small = price_design(_design([ComponentSpec(id=1, kind="glazing", sequence=1, params={})]))
     design_big = DesignSpec(
         id=2,
         artwork=ArtworkSpec(title="Art", width_in=Decimal("40"), height_in=Decimal("60")),
@@ -54,9 +52,7 @@ def test_bigger_art_costs_more():
 
 
 def test_missing_product_adds_note():
-    breakdown = price_design(
-        _design([ComponentSpec(id=1, kind="moulding", sequence=1, params={})])
-    )
+    breakdown = price_design(_design([ComponentSpec(id=1, kind="moulding", sequence=1, params={})]))
     assert any("no catalog product" in n for n in breakdown.notes)
 
 
@@ -64,9 +60,16 @@ def test_discontinued_product_adds_note():
     from app.domain.design.spec import ProductResolution
 
     product = ProductResolution(
-        product_id=9, name="Old Gold", description="", vendor_name="V", sku="X",
-        unit_cost_cents=300, unit_price_cents=1200, price_uom="per_linear_ft",
-        available=True, discontinued=True,
+        product_id=9,
+        name="Old Gold",
+        description="",
+        vendor_name="V",
+        sku="X",
+        unit_cost_cents=300,
+        unit_price_cents=1200,
+        price_uom="per_linear_ft",
+        available=True,
+        discontinued=True,
     )
     breakdown = price_design(
         _design([ComponentSpec(id=1, kind="moulding", sequence=1, params={}, product=product)])

@@ -3,6 +3,7 @@
 This is the only place that knows how to talk to the database. Domain code never
 imports from here.
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterator

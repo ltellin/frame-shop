@@ -8,6 +8,7 @@ knows nothing about them.
 it with real rules (rate tables, size breaks, vendor-specific markups, ...) must
 not require any change to the Design schema or the component registry.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -151,8 +152,9 @@ class PlaceholderProfile:
 
     def _price_spacer(self, layer: LayerView, product: ProductResolution | None) -> LayerPrice:
         feet = layer.geometry.linear_in / 12
-        return LayerPrice(to_cents(feet * self.SPACER_PER_FT), f"{feet:.2f} lin ft @ "
-                          f"${self.SPACER_PER_FT:.2f}/ft")
+        return LayerPrice(
+            to_cents(feet * self.SPACER_PER_FT), f"{feet:.2f} lin ft @ ${self.SPACER_PER_FT:.2f}/ft"
+        )
 
     def _price_fabric(self, layer: LayerView, product: ProductResolution | None) -> LayerPrice:
         if product:

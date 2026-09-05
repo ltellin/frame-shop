@@ -4,9 +4,10 @@ read model the API returns.
 All framing/pricing behaviour is delegated to the domain layer. This module only
 orchestrates: DB rows in, domain calls, DB rows + read model out.
 """
+
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -102,9 +103,7 @@ def list_designs(session: Session, *, order_id: int | None = None) -> list[Desig
 
 def _require_editable(design: Design) -> None:
     if design.status not in EDITABLE_STATUSES:
-        raise DomainValidationError(
-            f"design {design.id} is {design.status} and cannot be edited"
-        )
+        raise DomainValidationError(f"design {design.id} is {design.status} and cannot be edited")
 
 
 def update_design(session: Session, design: Design, patch: dict) -> Design:
@@ -230,7 +229,7 @@ def recompute_price(session: Session, design: Design) -> dict:
     spec = build_spec(session, design)
     breakdown = price_design(spec)
     design.price_breakdown = breakdown.as_dict()
-    design.priced_at = datetime.now(timezone.utc)
+    design.priced_at = datetime.now(UTC)
     design.pricing_profile_id = breakdown.profile_id
     design.pricing_profile_version = breakdown.profile_version
     session.flush()
@@ -309,9 +308,7 @@ def _warnings(session: Session, spec: DesignSpec) -> list[str]:
         if comp.product is None:
             continue
         if comp.product.discontinued:
-            out.append(
-                f"'{comp.product.name}' is discontinued but is used in this design."
-            )
+            out.append(f"'{comp.product.name}' is discontinued but is used in this design.")
         elif not comp.product.available:
             out.append(f"'{comp.product.name}' is currently unavailable from the vendor.")
     if not spec.components:

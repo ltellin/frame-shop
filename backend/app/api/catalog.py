@@ -18,13 +18,13 @@ def component_kinds() -> list[dict]:
 
 @router.get("/vendors")
 def vendors(session: Session = Depends(get_session)) -> list[dict]:
-    return [{"id": v.id, "name": v.name, "code": v.code} for v in catalog_service.list_vendors(session)]
+    return [
+        {"id": v.id, "name": v.name, "code": v.code} for v in catalog_service.list_vendors(session)
+    ]
 
 
 @router.get("/products")
-def products(
-    kind: str | None = None, session: Session = Depends(get_session)
-) -> list[dict]:
+def products(kind: str | None = None, session: Session = Depends(get_session)) -> list[dict]:
     return [
         {
             "id": p.id,

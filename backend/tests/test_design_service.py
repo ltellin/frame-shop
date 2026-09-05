@@ -43,13 +43,15 @@ def test_replace_components_assigns_contiguous_sequence(session, design):
 
 def test_replace_components_reorder_and_edit(session, design):
     design_service.replace_components(
-        session, design,
+        session,
+        design,
         [{"kind": "moulding", "params": {}}, {"kind": "mat", "params": {"border_in": "2"}}],
     )
     ids = {c.kind: c.id for c in design.components}
     # swap order, keep ids, widen the mat
     design_service.replace_components(
-        session, design,
+        session,
+        design,
         [
             {"id": ids["mat"], "kind": "mat", "params": {"border_in": "3"}},
             {"id": ids["moulding"], "kind": "moulding", "params": {}},
@@ -84,7 +86,8 @@ def test_invalid_params_rejected(session, design):
 
 def test_parent_index_links_component(session, design):
     design_service.replace_components(
-        session, design,
+        session,
+        design,
         [
             {"kind": "moulding", "params": {}},
             {"kind": "moulding", "params": {"stack_level": 1}, "parent_index": 0},

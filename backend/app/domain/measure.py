@@ -3,6 +3,7 @@
 All measurements are in inches, held as Decimal. Fractional shop input like
 ``16 1/2`` or ``16-1/2`` is parsed to Decimal at the edge.
 """
+
 from __future__ import annotations
 
 import re

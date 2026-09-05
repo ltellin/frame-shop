@@ -4,6 +4,7 @@ Response bodies for the rich Design read model are plain dicts built in the
 service layer; these models cover request payloads and the simple list
 responses.
 """
+
 from __future__ import annotations
 
 from pydantic import BaseModel, Field

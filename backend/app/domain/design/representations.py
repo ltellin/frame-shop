@@ -6,6 +6,7 @@ from these and never from the raw storage shape.
 * ``to_outside_in_list`` — the traditional framing-industry description.
 * ``to_exploded_layout`` — a renderer-agnostic model for the schematic.
 """
+
 from __future__ import annotations
 
 from decimal import Decimal

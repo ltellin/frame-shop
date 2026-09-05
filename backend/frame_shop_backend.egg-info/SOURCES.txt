@@ -1,7 +1,0 @@
-pyproject.toml
-app/__init__.py
-frame_shop_backend.egg-info/PKG-INFO
-frame_shop_backend.egg-info/SOURCES.txt
-frame_shop_backend.egg-info/dependency_links.txt
-frame_shop_backend.egg-info/requires.txt
-frame_shop_backend.egg-info/top_level.txt

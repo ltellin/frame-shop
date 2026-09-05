@@ -2,6 +2,7 @@
 
 Env-driven so the same code runs against SQLite locally and Postgres later.
 """
+
 from __future__ import annotations
 
 from functools import lru_cache

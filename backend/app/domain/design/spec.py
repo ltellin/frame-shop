@@ -4,6 +4,7 @@ Services build these dataclasses from ORM rows (or request payloads) and hand
 them to the geometry walk, the pricing engine, and the representation functions.
 Nothing in this module imports SQLAlchemy or FastAPI.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

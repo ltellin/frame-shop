@@ -7,9 +7,10 @@ Money is integer cents. Measurements are Numeric(inches). JSON columns map to
 JSONB on Postgres later. Statuses are plain strings validated in the domain/
 service layer so the vocabulary can evolve without a migration per value.
 """
+
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
@@ -26,7 +27,7 @@ from app.db.base import Base
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class Customer(Base):
@@ -39,7 +40,7 @@ class Customer(Base):
     notes: Mapped[str | None] = mapped_column(String(2000))
     created_at: Mapped[datetime] = mapped_column(default=_utcnow, server_default=func.now())
 
-    orders: Mapped[list["Order"]] = relationship(back_populates="customer")
+    orders: Mapped[list[Order]] = relationship(back_populates="customer")
 
 
 class Order(Base):
@@ -53,8 +54,8 @@ class Order(Base):
     created_at: Mapped[datetime] = mapped_column(default=_utcnow, server_default=func.now())
 
     customer: Mapped[Customer] = relationship(back_populates="orders")
-    artworks: Mapped[list["Artwork"]] = relationship(back_populates="order")
-    designs: Mapped[list["Design"]] = relationship(back_populates="order")
+    artworks: Mapped[list[Artwork]] = relationship(back_populates="order")
+    designs: Mapped[list[Design]] = relationship(back_populates="order")
 
 
 class Artwork(Base):
@@ -100,7 +101,7 @@ class Design(Base):
 
     order: Mapped[Order] = relationship(back_populates="designs")
     artwork: Mapped[Artwork] = relationship()
-    components: Mapped[list["DesignComponent"]] = relationship(
+    components: Mapped[list[DesignComponent]] = relationship(
         back_populates="design",
         cascade="all, delete-orphan",
         order_by="DesignComponent.sequence",
@@ -121,7 +122,7 @@ class DesignComponent(Base):
     parent_component_id: Mapped[int | None] = mapped_column(ForeignKey("design_component.id"))
 
     design: Mapped[Design] = relationship(back_populates="components")
-    product: Mapped["Product | None"] = relationship()
+    product: Mapped[Product | None] = relationship()
 
 
 class Vendor(Base):
@@ -132,7 +133,7 @@ class Vendor(Base):
     code: Mapped[str | None] = mapped_column(String(40))
     notes: Mapped[str | None] = mapped_column(String(2000))
 
-    products: Mapped[list["Product"]] = relationship(back_populates="vendor")
+    products: Mapped[list[Product]] = relationship(back_populates="vendor")
 
 
 class Product(Base):
