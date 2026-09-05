@@ -136,3 +136,31 @@ export type ComponentInput = {
   product_id?: number | null
   parent_index?: number | null
 }
+
+export type CustomerListItem = {
+  id: number
+  name: string
+  phone: string | null
+  email: string | null
+  order_count: number
+}
+
+export type OrderSummary = {
+  id: number
+  number: number
+  status: string
+  customer_id: number
+  customer_name: string
+  piece_count: number
+  design_count: number
+}
+
+export type OrderDetail = {
+  id: number
+  number: number
+  status: string
+  customer_id: number
+  customer_name: string
+  artworks: { id: number; title: string; width_in: number; height_in: number; depth_in: number | null }[]
+  designs: { id: number; name: string; status: string; artwork_title: string }[]
+}

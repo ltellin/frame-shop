@@ -15,6 +15,7 @@ def _order_dict(order) -> dict:
         "id": order.id,
         "number": order.number,
         "customer_id": order.customer_id,
+        "customer_name": order.customer.name,
         "status": order.status,
         "artworks": [
             {
@@ -26,8 +27,28 @@ def _order_dict(order) -> dict:
             }
             for a in order.artworks
         ],
-        "design_ids": [d.id for d in order.designs],
+        "designs": [
+            {"id": d.id, "name": d.name, "status": d.status, "artwork_title": d.artwork.title}
+            for d in order.designs
+        ],
     }
+
+
+def _order_summary(order) -> dict:
+    return {
+        "id": order.id,
+        "number": order.number,
+        "status": order.status,
+        "customer_id": order.customer_id,
+        "customer_name": order.customer.name,
+        "piece_count": len(order.artworks),
+        "design_count": len(order.designs),
+    }
+
+
+@router.get("")
+def list_orders(session: Session = Depends(get_session)) -> list[dict]:
+    return [_order_summary(o) for o in order_service.list_orders(session)]
 
 
 @router.post("", status_code=201)

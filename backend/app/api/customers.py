@@ -10,9 +10,18 @@ from app.services import order_service
 router = APIRouter(prefix="/customers", tags=["customers"])
 
 
-@router.get("", response_model=list[CustomerRead])
-def list_customers(session: Session = Depends(get_session)):
-    return order_service.list_customers(session)
+@router.get("")
+def list_customers(session: Session = Depends(get_session)) -> list[dict]:
+    return [
+        {
+            "id": c.id,
+            "name": c.name,
+            "phone": c.phone,
+            "email": c.email,
+            "order_count": len(c.orders),
+        }
+        for c in order_service.list_customers(session)
+    ]
 
 
 @router.post("", response_model=CustomerRead, status_code=201)

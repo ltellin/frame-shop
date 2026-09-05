@@ -31,7 +31,7 @@ function EditorBody({ onExit }: { onExit: () => void }) {
       <header className="editor-head">
         <div>
           <button className="link" onClick={onExit}>
-            ← all designs
+            ← designs
           </button>
           <h2>
             {design.name} <span className="muted">#{design.id}</span>

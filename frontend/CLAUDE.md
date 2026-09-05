@@ -28,14 +28,22 @@ belongs in `backend/app/domain/`.
 ```
 src/api/          client.ts (the ONLY place that calls the backend) + types.ts
                   (hand-written mirror of the backend read model — keep in sync)
+src/nav.ts        navigate(hash) — hash routing, no router library
+src/App.tsx       parseHash() route table + top-level render switch
 src/state/        designEditor.tsx — the one editable Design object + optimistic
                   edit + debounced PATCH + reconcile. Both panes bind to this.
 src/features/
-  home/           start-a-design form + design list
+  landing/        Landing.tsx — the home screen (Make a Design / Customers / Orders)
+  design/         NewDesign.tsx — start-a-design form + design list
   design-editor/  ComponentList, ComponentParamsPanel (schema-driven), PricePanel
   schematic/      Schematic.tsx + layout.ts (the SVG exploded view)
+  customers/      Customers.tsx — list + quick add
+  orders/         Orders.tsx — order list + pieces, links into the editor
 src/theme.ts      ROLE_COLORS — shared layer vocabulary (list + schematic)
 ```
+
+Routes (hash): `#/` landing · `#/design/new` · `#/designs/:id` editor ·
+`#/customers` · `#/orders`.
 
 ## Conventions
 

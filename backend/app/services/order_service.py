@@ -64,6 +64,10 @@ def get_order(session: Session, order_id: int) -> Order:
     return order
 
 
+def list_orders(session: Session) -> list[Order]:
+    return list(session.scalars(select(Order).order_by(Order.number.desc())))
+
+
 def get_or_create_draft_order(session: Session, *, customer_id: int) -> Order:
     existing = session.scalars(
         select(Order)

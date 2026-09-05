@@ -1,7 +1,10 @@
 import type {
   ComponentInput,
   ComponentKindMeta,
+  CustomerListItem,
   DesignRead,
+  OrderDetail,
+  OrderSummary,
   Product,
 } from './types'
 
@@ -72,6 +75,18 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(body),
     }),
+
+  listCustomers: () => request<CustomerListItem[]>('/customers'),
+
+  createCustomer: (body: { name: string; phone?: string; email?: string }) =>
+    request<{ id: number; name: string }>('/customers', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  listOrders: () => request<OrderSummary[]>('/orders'),
+
+  getOrder: (id: number) => request<OrderDetail>(`/orders/${id}`),
 }
 
 export function formatCents(cents: number): string {

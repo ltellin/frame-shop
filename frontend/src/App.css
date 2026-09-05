@@ -9,10 +9,130 @@
 .brand {
   font-weight: 700;
   letter-spacing: 0.02em;
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.brand:hover {
+  color: #fff;
 }
 .app-bar .tag {
   color: #b7afac;
   font-size: 0.8rem;
+}
+
+/* --- landing --- */
+.landing {
+  max-width: 960px;
+  margin: 0 auto;
+}
+.landing h1 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 12px 0 20px;
+}
+.landing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+.landing-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  padding: 22px 20px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.12s, transform 0.12s;
+}
+.landing-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.landing-glyph {
+  font-size: 1.8rem;
+  line-height: 1;
+  color: var(--accent);
+}
+.landing-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.landing-blurb {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* --- generic page wrapper --- */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stack > .link {
+  align-self: flex-start;
+}
+.stack > h2 {
+  margin: 4px 0 12px;
+  font-size: 1.2rem;
+}
+
+/* --- data table --- */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.data-table th {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.data-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- orders --- */
+.order-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.order-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.order-head {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.order-designs {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 14px;
+}
+.order-designs li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 3px 0;
 }
 
 main {

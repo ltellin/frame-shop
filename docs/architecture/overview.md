@@ -47,10 +47,14 @@ frontend/
   src/
     api/client.ts      the ONLY module that calls the backend
     api/types.ts       hand-written mirror of the backend read model
+    nav.ts             navigate(hash); App.tsx holds the route table
     state/designEditor.tsx   the one editable Design + optimistic edit + debounced PATCH
-    features/home/           start-a-design form + design list
+    features/landing/        Landing.tsx — home screen: Make a Design / Customers / Orders
+    features/design/         NewDesign.tsx — start-a-design form + design list
     features/design-editor/  ComponentList, ComponentParamsPanel, PricePanel, DesignEditor
     features/schematic/      Schematic.tsx + layout.ts
+    features/customers/      Customers.tsx — list + quick add
+    features/orders/         Orders.tsx — order list + pieces
     theme.ts           ROLE_COLORS
 ```
 

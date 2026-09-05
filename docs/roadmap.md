@@ -4,7 +4,7 @@ Living document. Update it when a milestone lands or a decision changes. A fresh
 agent session should be able to read this + `architecture/overview.md` and know
 where things stand.
 
-_Last updated: 2026-09-05 — end of slice 1._
+_Last updated: 2026-09-05 — slice 1 + landing/nav shell._
 
 ---
 
@@ -25,6 +25,16 @@ Built and committed:
   list↔schematic selection sync; optimistic edit + debounced PATCH + reconcile;
   status controls (draft/hold/quote/discard); hash routing.
 - Persists to SQLite. Discontinued-product warning on load.
+
+Added after slice 1:
+
+- **Landing page** (`#/`) with three entry points: Make a Design, Customers,
+  Orders. Hash routing in `App.tsx` + `nav.ts`.
+- **Customers page** (`#/customers`) — list with order counts + quick-add form.
+  Backend `GET /api/customers` now includes `order_count`.
+- **Orders page** (`#/orders`) — order list (number, customer, status, piece
+  count) expanding to the pieces/designs on each, linking into the editor. New
+  backend `GET /api/orders` + `customer_name`/`designs` on the order detail.
 
 ### Known rough edges (not blockers)
 

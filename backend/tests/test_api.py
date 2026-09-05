@@ -99,3 +99,31 @@ def test_unknown_kind_returns_422(client):
         },
     )
     assert r.status_code == 422
+
+
+def test_customers_and_orders_lists(client, seeded_catalog):
+    client.post(
+        "/api/designs",
+        json={
+            "customer": {"name": "Rosa Vance", "phone": "555-0100"},
+            "artwork": {"title": "Map", "width_in": "12", "height_in": "16"},
+        },
+    )
+
+    customers = client.get("/api/customers")
+    assert customers.status_code == 200
+    rosa = next(c for c in customers.json() if c["name"] == "Rosa Vance")
+    assert rosa["phone"] == "555-0100"
+    assert rosa["order_count"] == 1
+
+    orders = client.get("/api/orders")
+    assert orders.status_code == 200
+    assert len(orders.json()) == 1
+    order = orders.json()[0]
+    assert order["customer_name"] == "Rosa Vance"
+    assert order["design_count"] == 1
+    assert order["number"] >= 5271
+
+    detail = client.get(f"/api/orders/{order['id']}")
+    assert detail.status_code == 200
+    assert detail.json()["designs"][0]["artwork_title"] == "Map"

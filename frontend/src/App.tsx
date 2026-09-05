@@ -1,44 +1,61 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import { navigate } from './nav'
+import { Customers } from './features/customers/Customers'
+import { NewDesign } from './features/design/NewDesign'
 import { DesignEditor } from './features/design-editor/DesignEditor'
-import { Home } from './features/home/Home'
+import { Landing } from './features/landing/Landing'
+import { Orders } from './features/orders/Orders'
 
-// Minimal hash routing: #/ = home, #/designs/:id = editor.
-function readHash(): number | null {
-  const m = window.location.hash.match(/^#\/designs\/(\d+)/)
-  return m ? Number(m[1]) : null
+// Minimal hash routing — no router library (see frontend/CLAUDE.md).
+type Route =
+  | { name: 'landing' }
+  | { name: 'new-design' }
+  | { name: 'design'; id: number }
+  | { name: 'customers' }
+  | { name: 'orders' }
+
+function parseHash(): Route {
+  const h = window.location.hash.replace(/^#/, '')
+  const design = h.match(/^\/designs\/(\d+)/)
+  if (design) return { name: 'design', id: Number(design[1]) }
+  if (h === '/design/new') return { name: 'new-design' }
+  if (h === '/customers') return { name: 'customers' }
+  if (h === '/orders') return { name: 'orders' }
+  return { name: 'landing' }
 }
 
 export default function App() {
-  const [designId, setDesignId] = useState<number | null>(readHash)
+  const [route, setRoute] = useState<Route>(parseHash)
 
   useEffect(() => {
-    const onHash = () => setDesignId(readHash())
+    const onHash = () => setRoute(parseHash())
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
 
-  const open = (id: number) => {
-    window.location.hash = `#/designs/${id}`
-    setDesignId(id)
-  }
-  const exit = () => {
-    window.location.hash = '#/'
-    setDesignId(null)
-  }
+  const openDesign = (id: number) => navigate(`/designs/${id}`)
 
   return (
     <div className="app">
       <header className="app-bar">
-        <span className="brand">▦ Frame Shop</span>
-        <span className="tag">prototype · design editor</span>
+        <button className="brand" onClick={() => navigate('/')}>
+          ▦ Frame Shop
+        </button>
+        <span className="tag">prototype</span>
       </header>
       <main>
-        {designId == null ? (
-          <Home onOpen={open} />
-        ) : (
-          <DesignEditor key={designId} designId={designId} onExit={exit} />
+        {route.name === 'landing' && <Landing />}
+        {route.name === 'new-design' && <NewDesign onOpen={openDesign} />}
+        {route.name === 'design' && (
+          <DesignEditor
+            key={route.id}
+            designId={route.id}
+            onExit={() => navigate('/design/new')}
+          />
         )}
+        {route.name === 'customers' && <Customers />}
+        {route.name === 'orders' && <Orders onOpenDesign={openDesign} />}
       </main>
     </div>
   )
