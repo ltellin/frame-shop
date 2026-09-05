@@ -26,9 +26,14 @@ export type SchematicModel = {
 
 const VIEW_W = 560
 const PAD = 28
-const GAP_Y = 46 // vertical spacing between exploded layers
+const GAP_Y = 40 // vertical spacing between exploded layers
 const GAP_X = 12 // slight horizontal drift; back layers sit to the right
-const SHEAR = 0.42 // top-edge shift as a fraction of layer height (the "angle")
+// How edge-on each layer is drawn: the angle its face makes with the horizontal
+// line of sight. Low = seen almost from the side. This is the one knob.
+const VIEW_ANGLE_DEG = 10
+const FACE_SCALE = Math.sin((VIEW_ANGLE_DEG * Math.PI) / 180) // vertical foreshortening
+const LEAN = 1.6 // sideways shift of the far (top) edge, as a multiple of the face's screen height
+const MIN_OPENING_H = 6 // px — keep mat windows visible at a shallow angle
 const LABEL_GUTTER = 210
 const MAX_LAYER_W = 180 // px cap for the widest layer
 const MAX_LABEL = 26
@@ -43,13 +48,13 @@ export function buildSchematic(layout: ExplodedLayout): SchematicModel {
   const bounds = layout.bounds
 
   const scale = Math.max(4, MAX_LAYER_W / Math.max(bounds.width_in, 1))
-  const tallest = Math.max(...ordered.map((l) => l.height_in * scale), 1)
-  const height = PAD * 2 + (n - 1) * GAP_Y + tallest + 24
+  const tallestFace = Math.max(...ordered.map((l) => l.height_in * scale * FACE_SCALE), 1)
+  const height = PAD * 2 + (n - 1) * GAP_Y + tallestFace + 12
 
   const layers: PlacedLayer[] = ordered.map((layer, i) => {
     const w = layer.width_in * scale
-    const h = layer.height_in * scale
-    const s = h * SHEAR
+    const faceH = layer.height_in * scale * FACE_SCALE
+    const skew = faceH * LEAN
 
     // Frontmost layer (highest z) sits lowest / leftmost; backmost highest / right.
     const fromFront = n - 1 - i
@@ -57,29 +62,30 @@ export function buildSchematic(layout: ExplodedLayout): SchematicModel {
     const y = PAD + i * GAP_Y
 
     const outline = poly([
-      [x + s, y],
-      [x + s + w, y],
-      [x + w, y + h],
-      [x, y + h],
+      [x + skew, y],
+      [x + skew + w, y],
+      [x + w, y + faceH],
+      [x, y + faceH],
     ])
 
     let opening: string | null = null
     if (layer.opening_width_in && layer.opening_height_in) {
       const ow = layer.opening_width_in * scale
-      const oh = layer.opening_height_in * scale
-      const cx = x + s / 2 + (w - ow) / 2
-      const cy = y + (h - oh) / 2
-      const os = oh * SHEAR
+      const oh = Math.max(layer.opening_height_in * scale * FACE_SCALE, MIN_OPENING_H)
+      const os = oh * LEAN
+      const ox = x + (w - ow) / 2
+      const cyTop = y + faceH / 2 - oh / 2
+      const cyBot = y + faceH / 2 + oh / 2
       opening = poly([
-        [cx + os, cy],
-        [cx + os + ow, cy],
-        [cx + ow, cy + oh],
-        [cx, cy + oh],
+        [ox + os, cyTop],
+        [ox + os + ow, cyTop],
+        [ox + ow, cyBot],
+        [ox, cyBot],
       ])
     }
 
-    const labelAnchor = { x: VIEW_W - LABEL_GUTTER + 8, y: y + h / 2 }
-    const leader = `${round(x + s + w)},${round(y + 4)} ${round(labelAnchor.x - 8)},${round(
+    const labelAnchor = { x: VIEW_W - LABEL_GUTTER + 8, y: y + faceH / 2 }
+    const leader = `${round(x + skew + w)},${round(y + 2)} ${round(labelAnchor.x - 8)},${round(
       labelAnchor.y,
     )}`
 
