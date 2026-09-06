@@ -23,6 +23,7 @@ from typing import ClassVar, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.domain.design.layers import LayerGeometry
+from app.domain.design.spec import ProductResolution
 from app.domain.measure import Dimensions
 
 # --- Layer roles: the vocabulary the schematic uses to place/style a layer -----
@@ -114,6 +115,12 @@ class ComponentKind:
     def parse_params(self, raw: dict | None) -> BaseModel:
         return self.param_model.model_validate(raw or {})
 
+    def effective_params(self, params: BaseModel, product: ProductResolution | None) -> BaseModel:
+        """Let a selected product override manually-typed params before geometry
+        runs. Default: no change. Overridden by moulding/fillet to take the face
+        width from the product's real profile."""
+        return params
+
     def geometry(self, params: BaseModel, inner: Dimensions) -> LayerGeometry:
         """Default: a same-size layer that consumes no material."""
         return LayerGeometry(
@@ -129,11 +136,23 @@ class ComponentKind:
         return product_name or self.label
 
 
+def _face_from_profile(params: BaseModel, product: ProductResolution | None) -> BaseModel:
+    """Take ``face_in`` from a selected product's real profile, if it has one."""
+    if product is not None:
+        width = product.spec.get("face_width_in")
+        if width is not None:
+            return params.model_copy(update={"face_in": Decimal(str(width))})
+    return params
+
+
 class MouldingKind(ComponentKind):
     key = "moulding"
     label = "Moulding"
     param_model = MouldingParams
     default_layer_role = "frame"
+
+    def effective_params(self, params: MouldingParams, product: ProductResolution | None):
+        return _face_from_profile(params, product)
 
     def geometry(self, params: MouldingParams, inner: Dimensions) -> LayerGeometry:
         outer = inner.grown_by(params.face_in)
@@ -189,6 +208,9 @@ class FilletKind(ComponentKind):
     label = "Fillet"
     param_model = FilletParams
     default_layer_role = "fillet"
+
+    def effective_params(self, params: FilletParams, product: ProductResolution | None):
+        return _face_from_profile(params, product)
 
     def geometry(self, params: FilletParams, inner: Dimensions) -> LayerGeometry:
         outer = inner.grown_by(params.face_in)

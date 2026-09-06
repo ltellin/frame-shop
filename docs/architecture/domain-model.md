@@ -58,11 +58,19 @@ Artwork photos (ADR 0013). `design_id`, `image_id` (uuid, URL + filename stem),
 disk under `FRAMESHOP_MEDIA_DIR`.
 
 ### Vendor / Product
-Catalog **reference data** — a different concept from transaction data (ADR 0007).
+Catalog **reference data** — a different concept from transaction data
+(ADR 0007, 0014). `Vendor`: `name`, `code?`, `is_house` (the shop's own mill).
 `Product`: `vendor_id`, `kind`, `sku`, `name`, `description`, `unit_cost_cents`,
 `unit_price_cents`, `price_uom` (`per_linear_ft | per_united_in | per_sqft | each
-| sheet`), `available`, `discontinued`, `attributes` (JSON). Unique on
-`(vendor_id, sku)`.
+| sheet`), `available`, `discontinued`, and **`spec`** — the physical
+description, JSON validated per-kind by `domain/catalog/product_kinds.py`
+(`MouldingSpec` = `face_width_in`, `height_in`, `rabbet_width_in`,
+`rabbet_height_in`, `material`, `finish`). Unique on `(vendor_id, sku)`. Seeded
+from `app/seed/catalog.json`.
+
+A selected product's `spec` overrides typed component params before geometry runs
+(`ComponentKind.effective_params`): pick a real moulding and its face width drives
+the frame size + linear-feet price, not the manual `face_in`.
 
 ## Value objects (never tables)
 

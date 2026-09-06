@@ -49,11 +49,22 @@ A Design is a *fabrication spec*, not "art framing". Rules:
 
 Component kinds are a registry: `app/domain/design/kinds.py`. Each kind = a
 Pydantic param model + a `ComponentKind` subclass (`default_layer_role`,
-`consumes_product`, `rendered`, `geometry()`, `outside_in_label()`) + a
-`register()` call. Pricing for a kind is a `_price_<key>` method on
-`PlaceholderProfile` in `app/domain/pricing/profiles.py`. The geometry walk that
-pricing and the schematic both consume is `app/domain/design/geometry.py`. Use
-`/add-component-kind`.
+`consumes_product`, `rendered`, `effective_params()`, `geometry()`,
+`outside_in_label()`) + a `register()` call. Pricing for a kind is a
+`_price_<key>` method on `PlaceholderProfile` in `app/domain/pricing/profiles.py`.
+The geometry walk that pricing and the schematic both consume is
+`app/domain/design/geometry.py`. Use `/add-component-kind`.
+
+## Catalog products (ADR 0014)
+
+`Product.spec` is a per-kind physical description — JSON validated by a Pydantic
+model in `app/domain/catalog/product_kinds.py` (same pattern as component
+`params`). A selected product's spec overrides typed component params via
+`ComponentKind.effective_params(params, product)` *before* `geometry()` runs
+(moulding/fillet take `face_in` from `spec.face_width_in`) — so `geometry()`
+keeps its `(params, inner)` signature. Reads are lenient (`catalog_service.safe_spec`
+→ `{}` on a bad row); the `catalog.json` loader is strict. Catalog data lives in
+`app/seed/catalog.json`.
 
 ## Images + camera (ADR 0013)
 

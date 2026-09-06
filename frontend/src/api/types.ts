@@ -18,15 +18,29 @@ export type PriceBreakdown = {
   notes: string[]
 }
 
+// The moulding profile (and stubs for other kinds). All fields optional —
+// see backend/app/domain/catalog/product_kinds.py.
+export type ProductSpec = {
+  face_width_in?: number | string
+  height_in?: number | string
+  rabbet_width_in?: number | string
+  rabbet_height_in?: number | string
+  material?: string
+  finish?: string
+  [k: string]: unknown
+}
+
 export type ProductSummary = {
   id: number
   name: string
   vendor_name: string
+  vendor_is_house: boolean
   sku: string
   price_uom: string
   unit_price_cents: number
   available: boolean
   discontinued: boolean
+  spec: ProductSpec
 }
 
 export type Provenance = 'shop' | 'customer'
@@ -157,10 +171,12 @@ export type Product = {
   name: string
   description: string
   vendor_name: string
+  vendor_is_house: boolean
   unit_price_cents: number
   price_uom: string
   available: boolean
   discontinued: boolean
+  spec: ProductSpec
 }
 
 export type ComponentInput = {

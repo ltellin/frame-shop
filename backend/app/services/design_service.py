@@ -17,6 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.models import Design, DesignComponent
+from app.domain.design.geometry import estimated_stack_depth_in, frame_rabbet_height_in
 from app.domain.design.kinds import DESIGN_TYPES, get_kind, starter_stack
 from app.domain.design.representations import to_exploded_layout, to_outside_in_list
 from app.domain.design.spec import ArtworkSpec, ComponentSpec, DesignSpec
@@ -439,11 +440,13 @@ def _product_summary(resolution) -> dict | None:
         "id": resolution.product_id,
         "name": resolution.name,
         "vendor_name": resolution.vendor_name,
+        "vendor_is_house": resolution.vendor_is_house,
         "sku": resolution.sku,
         "price_uom": resolution.price_uom,
         "unit_price_cents": resolution.unit_price_cents,
         "available": resolution.available,
         "discontinued": resolution.discontinued,
+        "spec": resolution.spec,
     }
 
 
@@ -456,6 +459,16 @@ def _warnings(spec: DesignSpec) -> list[str]:
             out.append(f"'{comp.product.name}' is discontinued but is used in this design.")
         elif not comp.product.available:
             out.append(f"'{comp.product.name}' is currently unavailable from the vendor.")
+
+    rabbet = frame_rabbet_height_in(spec)
+    if rabbet is not None:
+        depth = estimated_stack_depth_in(spec)
+        if depth > rabbet:
+            out.append(
+                f"The layers add up to about {depth:g}″ deep, but the frame's rabbet "
+                f"only holds {rabbet:g}″ — it may not fit."
+            )
+
     if not spec.components:
         out.append("This design has no components yet.")
     return out

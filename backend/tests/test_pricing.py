@@ -16,6 +16,25 @@ def _design(components, w="16", h="20"):
     )
 
 
+def _resolution(**over) -> ProductResolution:
+    base = dict(
+        product_id=9,
+        kind="moulding",
+        name="Old Gold",
+        description="",
+        vendor_name="V",
+        vendor_is_house=False,
+        sku="X",
+        unit_cost_cents=300,
+        unit_price_cents=1200,
+        price_uom="per_linear_ft",
+        available=True,
+        discontinued=False,
+        spec={},
+    )
+    return ProductResolution(**{**base, **over})
+
+
 def test_empty_design_only_has_fitting_fee():
     breakdown = price_design(_design([]))
     assert breakdown.profile_id == "placeholder"
@@ -64,18 +83,7 @@ def test_customer_supplied_component_charges_handling_only():
 
 
 def test_discontinued_product_adds_note():
-    product = ProductResolution(
-        product_id=9,
-        name="Old Gold",
-        description="",
-        vendor_name="V",
-        sku="X",
-        unit_cost_cents=300,
-        unit_price_cents=1200,
-        price_uom="per_linear_ft",
-        available=True,
-        discontinued=True,
-    )
+    product = _resolution(discontinued=True)
     breakdown = price_design(
         _design([ComponentSpec(id=1, kind="moulding", sequence=1, params={}, product=product)])
     )

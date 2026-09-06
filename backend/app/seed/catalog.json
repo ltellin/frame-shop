@@ -1,0 +1,116 @@
+{
+  "_note": "Realistic PLACEHOLDER data. Correct the numbers and add your own mouldings. Costs are per linear foot in dollars; profile dims in inches.",
+
+  "vendors": [
+    { "name": "House", "code": "HSE", "is_house": true },
+    { "name": "Roma Moulding", "code": "ROMA" },
+    { "name": "Omega Moulding", "code": "OMG" },
+    { "name": "Fotiou Frames", "code": "FOT" },
+    { "name": "Larson-Juhl", "code": "LJ" },
+    { "name": "Crescent", "code": "CRES" },
+    { "name": "Bainbridge", "code": "BB" },
+    { "name": "Tru Vue", "code": "TV" }
+  ],
+
+  "products": [
+    {
+      "vendor": "House", "kind": "moulding", "sku": "H-100",
+      "name": "Ash Scoop 1\"", "description": "Milled solid ash, clear matte",
+      "cost": 1.10, "price": 6.50, "uom": "per_linear_ft",
+      "spec": { "face_width_in": 1.0, "height_in": 0.75, "rabbet_width_in": 0.1875, "rabbet_height_in": 0.5, "material": "wood", "finish": "natural" }
+    },
+    {
+      "vendor": "House", "kind": "moulding", "sku": "H-220",
+      "name": "Walnut Cap 2\"", "description": "Solid walnut, oiled",
+      "cost": 2.40, "price": 11.00, "uom": "per_linear_ft",
+      "spec": { "face_width_in": 2.0, "height_in": 1.0, "rabbet_width_in": 0.25, "rabbet_height_in": 0.625, "material": "wood", "finish": "walnut oil" }
+    },
+    {
+      "vendor": "House", "kind": "moulding", "sku": "H-075",
+      "name": "Maple Float 0.75\"", "description": "Milled maple, flat profile for float mounts",
+      "cost": 0.95, "price": 5.75, "uom": "per_linear_ft",
+      "spec": { "face_width_in": 0.75, "height_in": 1.5, "rabbet_width_in": 0.125, "rabbet_height_in": 1.25, "material": "wood", "finish": "natural" }
+    },
+    {
+      "vendor": "House", "kind": "fillet", "sku": "H-F050",
+      "name": "Maple Fillet 0.5\"", "description": "Slim maple fillet",
+      "cost": 0.60, "price": 3.25, "uom": "per_linear_ft",
+      "spec": { "face_width_in": 0.5, "rabbet_width_in": 0.125, "material": "wood", "finish": "natural" }
+    },
+
+    {
+      "vendor": "Roma Moulding", "kind": "moulding", "sku": "P8821",
+      "name": "Tabacchino Walnut", "description": "Italian walnut, closed corner",
+      "cost": 5.50, "price": 16.00, "uom": "per_linear_ft",
+      "spec": { "face_width_in": 1.5, "height_in": 0.875, "rabbet_width_in": 0.25, "rabbet_height_in": 0.625, "material": "wood", "finish": "walnut" }
+    },
+    {
+      "vendor": "Roma Moulding", "kind": "moulding", "sku": "R3300",
+      "name": "Nero Matte", "description": "Contemporary matte black",
+      "cost": 2.20, "price": 7.25, "uom": "per_linear_ft", "available": false,
+      "spec": { "face_width_in": 0.75, "height_in": 0.625, "rabbet_width_in": 0.1875, "rabbet_height_in": 0.5, "material": "polystyrene", "finish": "matte black" }
+    },
+    {
+      "vendor": "Omega Moulding", "kind": "moulding", "sku": "OM-102-102",
+      "name": "Gold Bead", "description": "Narrow gold-leaf bead",
+      "cost": 3.10, "price": 9.50, "uom": "per_linear_ft",
+      "spec": { "face_width_in": 0.625, "height_in": 0.75, "rabbet_width_in": 0.1875, "rabbet_height_in": 0.5, "material": "wood", "finish": "gold leaf" }
+    },
+    {
+      "vendor": "Fotiou Frames", "kind": "moulding", "sku": "FT-340S",
+      "name": "Florentine Silver", "description": "Wide silver-leaf scoop",
+      "cost": 4.80, "price": 15.00, "uom": "per_linear_ft",
+      "spec": { "face_width_in": 2.25, "height_in": 1.125, "rabbet_width_in": 0.25, "rabbet_height_in": 0.75, "material": "wood", "finish": "silver leaf" }
+    },
+    {
+      "vendor": "Larson-Juhl", "kind": "moulding", "sku": "LJ-100234",
+      "name": "Biltmore Gold", "description": "Ornate gold leaf",
+      "cost": 4.10, "price": 12.75, "uom": "per_linear_ft",
+      "spec": { "face_width_in": 2.0, "height_in": 1.0, "rabbet_width_in": 0.25, "rabbet_height_in": 0.75, "material": "wood", "finish": "gold leaf" }
+    },
+    {
+      "vendor": "Larson-Juhl", "kind": "moulding", "sku": "LJ-090111",
+      "name": "Academie Silver", "description": "Discontinued silver profile",
+      "cost": 3.00, "price": 9.50, "uom": "per_linear_ft", "discontinued": true,
+      "spec": { "face_width_in": 1.0, "height_in": 0.625, "rabbet_width_in": 0.1875, "rabbet_height_in": 0.4375, "material": "polystyrene", "finish": "silver" }
+    },
+
+    {
+      "vendor": "Crescent", "kind": "mat", "sku": "CRES-1069",
+      "name": "Antique White", "description": "Conservation, cream core",
+      "cost": 0.00, "price": 0.30, "uom": "per_united_in",
+      "spec": { "core_color": "cream core", "thickness_in": 0.0625, "conservation": true }
+    },
+    {
+      "vendor": "Crescent", "kind": "mat", "sku": "CRES-9502",
+      "name": "Raven Black", "description": "Black-on-black conservation",
+      "cost": 0.00, "price": 0.34, "uom": "per_united_in",
+      "spec": { "core_color": "black core", "thickness_in": 0.0625, "conservation": true }
+    },
+    {
+      "vendor": "Bainbridge", "kind": "mat", "sku": "BB-8640",
+      "name": "Alphamat Sandstone", "description": "Warm neutral, alpha-cellulose",
+      "cost": 0.00, "price": 0.28, "uom": "per_united_in",
+      "spec": { "core_color": "white core", "thickness_in": 0.0625, "conservation": true }
+    },
+
+    {
+      "vendor": "Tru Vue", "kind": "glazing", "sku": "TV-CC",
+      "name": "Conservation Clear", "description": "99% UV, anti-outgassing",
+      "cost": 0.90, "price": 3.60, "uom": "per_sqft",
+      "spec": { "uv_pct": 99, "anti_reflective": false, "acrylic": false, "thickness_in": 0.098 }
+    },
+    {
+      "vendor": "Tru Vue", "kind": "glazing", "sku": "TV-MUSEUM",
+      "name": "Museum Glass", "description": "Anti-reflective + 99% UV",
+      "cost": 4.50, "price": 14.00, "uom": "per_sqft",
+      "spec": { "uv_pct": 99, "anti_reflective": true, "acrylic": false, "thickness_in": 0.098 }
+    },
+    {
+      "vendor": "Tru Vue", "kind": "glazing", "sku": "TV-OP3",
+      "name": "Optium Acrylic", "description": "AR acrylic, 99% UV, anti-static",
+      "cost": 6.00, "price": 18.00, "uom": "per_sqft",
+      "spec": { "uv_pct": 99, "anti_reflective": true, "acrylic": true, "thickness_in": 0.118 }
+    }
+  ]
+}

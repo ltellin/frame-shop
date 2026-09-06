@@ -31,11 +31,13 @@ backend/
     domain/            pure Python — no fastapi, no sqlalchemy
       money.py         Money value object, integer cents
       measure.py       Dimensions, parse_inches (handles "16 1/2")
+      catalog/
+        product_kinds.py   per-kind physical spec models (MouldingSpec …) + registry
       design/
         spec.py            DesignSpec (base dims + type) / ComponentSpec / ArtworkSpec / ProductResolution
-        kinds.py           component-kind registry + DESIGN_TYPES + STARTER_STACKS
+        kinds.py           component-kind registry + DESIGN_TYPES + STARTER_STACKS + effective_params
         layers.py          LayerGeometry / LayerView (shared, breaks an import cycle)
-        geometry.py        walk_layers() — the one place geometry accumulates
+        geometry.py        walk_layers() + the "will it fit?" depth helpers
         representations.py  to_outside_in_list(), to_exploded_layout()
       pricing/
         profiles.py        PricingProfile protocol + PlaceholderProfile (fake rates)
@@ -43,7 +45,7 @@ backend/
     db/
       base.py          engine, SessionLocal, Base, get_session dependency
       models.py        ORM: Customer, Order, Design, DesignComponent, DesignImage, Vendor, Product
-    seed/sample_catalog.py   fake vendors + products (5 vendors, ~13 products)
+    seed/catalog.json + sample_catalog.py   catalog data + validating upsert loader
   alembic/             migrations (env.py wired to Base.metadata + settings)
   media/               uploaded / captured images (gitignored)
   tests/               pytest; in-memory SQLite

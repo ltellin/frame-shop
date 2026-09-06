@@ -4,7 +4,23 @@ Living document. Update it when a milestone lands or a decision changes. A fresh
 agent session should be able to read this + `architecture/overview.md` and know
 where things stand.
 
-_Last updated: 2026-09-05 — slice 1.5 (design-workflow rework)._
+_Last updated: 2026-09-06._
+
+---
+
+## Real moulding catalog — DONE
+
+ADR 0014. `Product.spec` (per-kind physical description, JSON validated by
+`domain/catalog/product_kinds.py`); `Vendor.is_house`; `attributes` → `spec`
+rename. A selected moulding's real face width drives the frame geometry + price
+via `ComponentKind.effective_params`. Seed moved to hand-editable
+`app/seed/catalog.json` (realistic placeholders — correct + extend). A
+"will it fit?" warning compares the stack depth to the moulding's
+`rabbet_height_in`. Frontend: picker shows face width; profile shown read-only;
+`face_in` hidden when a product is selected.
+
+**Next for the catalog:** a CSV/spreadsheet importer (`app/catalog/adapters/`) and
+a browser catalog-admin page — both still deferred (see backlog).
 
 ---
 
@@ -116,7 +132,9 @@ graph, invoices — those are slice 3+.
 | Payments, deposit (50% / full), Order subtotal/tax/balance | `Order` + `Payment` model, `order_service` | brief "intake workflow" step 6–7 |
 | Production task graph + derived `production_state` | `domain/production/`, `ProductionTask` model | ADR 0005; tiny hard-coded template |
 | Invoices, work-order sheets, labels, cut lists, "daily closing" lists | `domain/documents/` (derivation only) | all derived from canonical data; brief |
-| Real vendor catalog ingestion | `app/catalog/adapters/<vendor>.py` → `catalog_service` | ADR 0007 |
+| CSV / spreadsheet catalog importer | `app/catalog/adapters/csv.py` → same shape as `catalog.json` | ADR 0007, 0014 |
+| Browser catalog-admin page (`#/catalog`) | add/edit vendors + products + specs | ADR 0014 |
+| Real vendor catalog ingestion (live feeds) | `app/catalog/adapters/<vendor>.py` → `catalog_service` | ADR 0007 |
 | Real pricing rules / rate tables | new `PricingProfile` implementation | ADR 0008; no schema change |
 | OpenAPI-generated frontend types | replace hand-written `src/api/types.ts` | via `openapi-typescript` |
 | SQLite → Postgres | `config.py` `database_url` | pair with optimistic concurrency (ADR 0010) |

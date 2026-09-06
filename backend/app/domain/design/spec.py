@@ -46,15 +46,18 @@ class ProductResolution:
     """
 
     product_id: int
+    kind: str
     name: str
     description: str
     vendor_name: str
+    vendor_is_house: bool
     sku: str
     unit_cost_cents: int
     unit_price_cents: int
     price_uom: str  # per_linear_ft | per_united_in | per_sqft | each | sheet
     available: bool
     discontinued: bool
+    spec: dict  # the product's validated physical spec (see domain/catalog/product_kinds.py)
 
 
 @dataclass(frozen=True, slots=True)

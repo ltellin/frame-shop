@@ -21,3 +21,4 @@ Add one with `/new-adr <short-title>`. Use `0000-template.md`.
 | [0011](0011-schematic-svg.md) | SVG for the schematic | accepted |
 | [0012](0012-design-as-fabrication-spec.md) | Design is a universal fabrication spec (type tag, provenance, loose drafts) | accepted |
 | [0013](0013-artwork-images-and-capture.md) | Artwork images on disk + camera-capture skeleton | accepted |
+| [0014](0014-catalog-product-spec.md) | Catalog products carry a per-kind physical `spec`; profile drives geometry | accepted |

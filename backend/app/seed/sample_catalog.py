@@ -1,218 +1,91 @@
-"""Load fake vendor + product catalog data for development.
+"""Load the catalog from ``catalog.json``.
 
 Run:  python -m app.seed.sample_catalog
-Idempotent: clears and reloads the catalog tables only.
+
+Upserts vendors by name and products by (vendor, sku), so re-running updates
+rows in place. Each product's ``spec`` is validated against its kind's schema
+(domain/catalog/product_kinds.py); a bad row aborts the load with a clear
+message. This same shape is the seam a CSV / vendor-feed importer would target.
 """
 
 from __future__ import annotations
 
-from sqlalchemy import delete
+import json
+import sys
+from pathlib import Path
+
+from pydantic import ValidationError
+from sqlalchemy import select
 
 from app.db.base import SessionLocal
 from app.db.models import Product, Vendor
+from app.domain.catalog.product_kinds import parse_spec
 
-VENDORS = [
-    {"name": "Larson-Juhl", "code": "LJ"},
-    {"name": "Roma Moulding", "code": "ROMA"},
-    {"name": "Crescent", "code": "CRES"},
-    {"name": "Tru Vue", "code": "TV"},
-    {"name": "Bainbridge", "code": "BB"},
-]
+CATALOG_FILE = Path(__file__).with_name("catalog.json")
 
-# (vendor, kind, sku, name, description, cost$, price$, uom, available, discontinued)
-PRODUCTS = [
-    (
-        "Larson-Juhl",
-        "moulding",
-        "LJ-100234",
-        "Biltmore Gold",
-        'Ornate gold leaf, 2" face',
-        4.10,
-        12.75,
-        "per_linear_ft",
-        True,
-        False,
-    ),
-    (
-        "Larson-Juhl",
-        "moulding",
-        "LJ-556001",
-        "Ferrosa Rust",
-        'Textured metallic, 1.25" face',
-        2.80,
-        8.90,
-        "per_linear_ft",
-        True,
-        False,
-    ),
-    (
-        "Roma Moulding",
-        "moulding",
-        "ROMA-8821",
-        "Tabacchino Walnut",
-        'Italian walnut, 1.5" face',
-        5.50,
-        16.00,
-        "per_linear_ft",
-        True,
-        False,
-    ),
-    (
-        "Roma Moulding",
-        "moulding",
-        "ROMA-3300",
-        "Nero Matte Black",
-        'Contemporary black, 0.75" face',
-        2.20,
-        7.25,
-        "per_linear_ft",
-        False,
-        False,
-    ),
-    (
-        "Larson-Juhl",
-        "moulding",
-        "LJ-090111",
-        "Academie Silver",
-        "Discontinued silver profile",
-        3.00,
-        9.50,
-        "per_linear_ft",
-        False,
-        True,
-    ),
-    (
-        "Crescent",
-        "mat",
-        "CRES-1069",
-        "Antique White",
-        "Conservation-grade, cream core",
-        0.00,
-        0.30,
-        "per_united_in",
-        True,
-        False,
-    ),
-    (
-        "Crescent",
-        "mat",
-        "CRES-9502",
-        "Raven Black",
-        "Black-on-black conservation mat",
-        0.00,
-        0.34,
-        "per_united_in",
-        True,
-        False,
-    ),
-    (
-        "Bainbridge",
-        "mat",
-        "BB-8640",
-        "Alphamat Sandstone",
-        "Warm neutral, alpha-cellulose",
-        0.00,
-        0.28,
-        "per_united_in",
-        True,
-        False,
-    ),
-    (
-        "Crescent",
-        "mat",
-        "CRES-0000",
-        "Newsprint Grey",
-        "Old stock, being phased out",
-        0.00,
-        0.22,
-        "per_united_in",
-        True,
-        True,
-    ),
-    (
-        "Tru Vue",
-        "glazing",
-        "TV-CC",
-        "Conservation Clear",
-        "99% UV, anti-outgassing",
-        0.90,
-        3.60,
-        "per_sqft",
-        True,
-        False,
-    ),
-    (
-        "Tru Vue",
-        "glazing",
-        "TV-MUSEUM",
-        "Museum Glass",
-        "Anti-reflective + 99% UV",
-        4.50,
-        14.00,
-        "per_sqft",
-        True,
-        False,
-    ),
-    (
-        "Tru Vue",
-        "glazing",
-        "TV-REG",
-        "Regular Acrylic",
-        "Standard 2mm acrylic",
-        0.60,
-        2.40,
-        "per_sqft",
-        True,
-        False,
-    ),
-    (
-        "Bainbridge",
-        "fillet",
-        "BB-FIL-22",
-        "Gold Bead Fillet",
-        'Slim gold fillet, 0.375" face',
-        1.20,
-        4.50,
-        "per_linear_ft",
-        True,
-        False,
-    ),
-]
+
+def _dollars_to_cents(value) -> int:
+    return round(float(value or 0) * 100)
+
+
+def _validate(row: dict) -> dict:
+    kind = row["kind"]
+    try:
+        spec = parse_spec(kind, row.get("spec"))
+    except ValidationError as exc:
+        raise SystemExit(
+            f"bad spec for {row.get('vendor')} {row.get('sku')} ({kind}):\n{exc}"
+        ) from None
+    if kind in ("moulding", "fillet") and not spec.get("face_width_in"):
+        raise SystemExit(f"{row.get('vendor')} {row.get('sku')}: a {kind} needs spec.face_width_in")
+    return spec
+
+
+def load(path: Path = CATALOG_FILE) -> tuple[int, int]:
+    data = json.loads(path.read_text())
+    session = SessionLocal()
+    try:
+        vendors: dict[str, Vendor] = {}
+        for spec in data["vendors"]:
+            v = session.scalar(select(Vendor).where(Vendor.name == spec["name"]))
+            if v is None:
+                v = Vendor(name=spec["name"])
+                session.add(v)
+            v.code = spec.get("code")
+            v.is_house = bool(spec.get("is_house", False))
+            vendors[v.name] = v
+        session.flush()
+
+        for row in data["products"]:
+            spec = _validate(row)
+            vendor = vendors[row["vendor"]]
+            product = session.scalar(
+                select(Product).where(Product.vendor_id == vendor.id, Product.sku == row["sku"])
+            )
+            if product is None:
+                product = Product(vendor_id=vendor.id, sku=row["sku"])
+                session.add(product)
+            product.kind = row["kind"]
+            product.name = row["name"]
+            product.description = row.get("description", "")
+            product.unit_cost_cents = _dollars_to_cents(row.get("cost"))
+            product.unit_price_cents = _dollars_to_cents(row.get("price"))
+            product.price_uom = row.get("uom", "each")
+            product.available = bool(row.get("available", True))
+            product.discontinued = bool(row.get("discontinued", False))
+            product.spec = spec
+
+        session.commit()
+        return len(data["vendors"]), len(data["products"])
+    finally:
+        session.close()
 
 
 def run() -> None:
-    session = SessionLocal()
-    try:
-        session.execute(delete(Product))
-        session.execute(delete(Vendor))
-        session.flush()
-
-        vendors: dict[str, Vendor] = {}
-        for spec in VENDORS:
-            vendor = Vendor(name=spec["name"], code=spec["code"])
-            session.add(vendor)
-            vendors[spec["name"]] = vendor
-        session.flush()
-
-        for vname, kind, sku, name, desc, cost, price, uom, avail, disc in PRODUCTS:
-            session.add(
-                Product(
-                    vendor_id=vendors[vname].id,
-                    kind=kind,
-                    sku=sku,
-                    name=name,
-                    description=desc,
-                    unit_cost_cents=round(cost * 100),
-                    unit_price_cents=round(price * 100),
-                    price_uom=uom,
-                    available=avail,
-                    discontinued=disc,
-                )
-            )
-        session.commit()
-        print(f"seeded {len(VENDORS)} vendors, {len(PRODUCTS)} products")
-    finally:
-        session.close()
+    vendors, products = load()
+    print(
+        f"loaded {vendors} vendors, {products} products from {CATALOG_FILE.name}", file=sys.stderr
+    )
 
 
 if __name__ == "__main__":

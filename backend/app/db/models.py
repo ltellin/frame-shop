@@ -172,6 +172,9 @@ class Vendor(Base):
     name: Mapped[str] = mapped_column(String(200), unique=True)
     code: Mapped[str | None] = mapped_column(String(40))
     notes: Mapped[str | None] = mapped_column(String(2000))
+    # The shop itself, for mouldings it mills in-house. Its unit_cost_cents is
+    # the cost to produce, and its products have no external SKU to reconcile.
+    is_house: Mapped[bool] = mapped_column(default=False, server_default="0")
 
     products: Mapped[list[Product]] = relationship(back_populates="vendor")
 
@@ -192,6 +195,7 @@ class Product(Base):
     price_uom: Mapped[str] = mapped_column(String(20), default="each")
     available: Mapped[bool] = mapped_column(default=True)
     discontinued: Mapped[bool] = mapped_column(default=False)
-    attributes: Mapped[dict] = mapped_column(JSON, default=dict)
+    # The physical specification, validated per-kind (domain/catalog/product_kinds.py).
+    spec: Mapped[dict] = mapped_column(JSON, default=dict)
 
     vendor: Mapped[Vendor] = relationship(back_populates="products")

@@ -1,6 +1,7 @@
 # ADR 0007 — Catalog reference data is separate from transaction data
 
-- **Status:** accepted
+- **Status:** accepted — extended by [ADR 0014](0014-catalog-product-spec.md)
+  (`Product.spec`, `Vendor.is_house`, the `catalog.json` loader)
 - **Date:** 2026-09-05
 
 ## Context
