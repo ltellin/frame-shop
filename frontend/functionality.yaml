@@ -1,0 +1,107 @@
+# frame-shop — frontend functionality
+#
+# Mid-restart; nothing implemented. This captures the UI/UX decisions reached
+# before the reset. The prior prototype is at `git checkout prototype-v0`; the
+# schematic it built is preserved under /schematic-visualizer.
+
+role: >
+  A thin client. It renders the numbers and the layout model the backend gives
+  it. No framing / pricing / geometry math in the frontend — if you're computing
+  what a frame costs or how big a mat is in TypeScript, it belongs in the backend.
+
+stack_in_use:  # not binding on the re-plan
+  - React 19 + TypeScript + Vite, TanStack Query for server state
+  - Hash routing, no router library
+  - Plain CSS; TS types hand-written to mirror the backend read model
+  - One editable Design object in a store; optimistic local edit -> debounced
+    PATCH of the full component list -> reconcile with the authoritative response
+
+signature_ux_goal: >
+  The schematic visualizer (see /schematic-visualizer/NOTES.md) — a simplified
+  exploded side-view of each design that also serves as a visual "fingerprint"
+  for recognising a job when browsing.
+
+# ---------------------------------------------------------------------------
+workflow:
+
+  landing:
+    - Three entry points: "Make a Design", "Customers", "Orders".
+    - Plus a "Drafts" list — loose autosaved designs to resume.
+
+  make_a_design_gate:
+    - Getting to the design editor requires NO upfront info — no customer, no
+      artwork description.
+    - A small first step: "what are you making?" (the design `type`) + the base
+      dimensions (labelled by `base_ref` — "Art size" / "Sight size" / "Glass
+      size" / "Frame rabbet").
+    - Entering both dimensions **autosaves a loose draft** (no customer, no order)
+      and drops into the editor. Leaving the page keeps the draft — like a Gmail
+      draft. (Prototype auto-created after a short debounce on both dimensions.)
+
+  design_editor:
+    principle: don't crowd it. One editable Design; every panel is a pure view of it.
+    panels:
+      piece:
+        - the `type` selector ("what are you making?")
+        - base width x height (+ optional depth), labelled by `base_ref`
+        - optional artwork block (title / type / notes) — only for types that use art
+        - `quantity` (shown when > 1 or for trade types)
+        - an **images strip**: thumbnails, "Add photo" (upload), "Take photo"
+          (POSTs to the capture endpoint; on 501 shows "No camera configured yet
+          — add a photo instead"), remove-per-image
+      components:
+        - the ordered list, outside -> inside
+        - add (kind picker) / remove / reorder (up-down) / select
+        - click a component <-> highlights its schematic layer (shared selectedId)
+      component_params:
+        - schema-driven fields from the kind's param JSON schema
+        - a Shop supplied / Customer supplied toggle; customer-supplied hides the
+          product picker and shows a handling-charge note
+        - when a real moulding is selected: a read-only profile block (face width,
+          rabbet depth, material, species, finish) and the manual face-width field
+          is hidden (the product defines it); moulding options show the face width
+        - discontinued / unavailable products flagged in the picker
+      price:
+        - the backend PriceBreakdown: line items (label + detail + amount) + a
+          subtotal; the pricing-profile id/version; notes (no product selected,
+          customer-supplied, discontinued)
+      size_readout:
+        - finished W x H (from the backend summary). ("United inches" was
+          explicitly removed — the user doesn't use the term.)
+      schematic:
+        - see /schematic-visualizer/
+    editable_gating:
+      - `complete` is false until base dimensions exist — panels show a hint, not
+        a crash. Price / representations / summary may be null.
+      - only a `draft` design is editable; `accepted` is locked.
+    header_actions:
+      - autosave indicator ("draft · saved" / "saving…")
+      - **Add to order** (primary) and **Discard** (danger). (Hold / Save-as-quote
+        were dropped — a quote is a printed draft.)
+
+  add_to_order:
+    - a dialog: pick an existing customer (searchable) OR enter a new one
+      (name required, phone / email optional); choose a new order or the
+      customer's existing open order; optional due date
+    - on success -> the Order detail page
+
+  order_detail:
+    - the order's pieces (each design: id, title/type, size, status, subtotal)
+    - "Add another design" -> the gate, carrying the order id so the new design's
+      "Add to order" pre-attaches to this order
+
+  customers:
+    - list (name, phone, email, order count) + a quick-add form
+
+# ---------------------------------------------------------------------------
+deferred:
+  - OpenAPI-generated types (replace the hand-written mirror).
+  - A catalog-admin screen (add/edit vendors, products, specs).
+  - Work-order / production / pickup views — the other shop stations, once those
+    backend concepts exist.
+  - Animate the schematic layers apart / highlight on edit.
+
+known_rough_edges_from_prototype:
+  - Single-layer schematics (mat-only, glass-only) look sparse.
+  - The gate auto-creates the draft ~700ms after both dimensions are filled — a
+    fat-fingered dimension makes a draft that's then corrected in the editor.

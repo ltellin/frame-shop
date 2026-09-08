@@ -1,0 +1,36 @@
+/* Schematic styles — extracted from the prototype's App.css.
+ *
+ * Needs these CSS custom properties defined by the host app (theme tokens):
+ *   --line    hairline border colour
+ *   --muted   secondary text colour
+ *   --accent  selection / highlight colour
+ * plus --hair (faint guide lines) used inline in Schematic.tsx.
+ */
+
+.schematic {
+  width: 100%;
+  height: auto;
+  background: repeating-linear-gradient(
+    45deg,
+    #faf8f4,
+    #faf8f4 10px,
+    #f4f1ec 10px,
+    #f4f1ec 20px
+  );
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.schematic .clickable {
+  cursor: pointer;
+}
+.schematic .layer-label {
+  font-size: 11px;
+  fill: var(--muted);
+}
+.schematic .layer-label.active {
+  fill: var(--accent);
+  font-weight: 700;
+}
+.schematic .layer.clickable:hover path {
+  stroke: var(--accent);
+}
