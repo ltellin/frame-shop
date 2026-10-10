@@ -30,11 +30,14 @@ the rest of this repo (or on any web framework) — it's meant to be imported
 directly from a separate app, e.g. a website that sells these mouldings.
 
 ```bash
-# local editable install (dev, same machine)
+# local editable install — day-to-day dev, same machine, always reads live
+# source (no reinstall needed as frame-shop changes)
 pip install -e /path/to/frame-shop/backend
 
-# git-based install (once pushed to origin)
-pip install "frameshop-pricing @ git+https://github.com/ltellin/frame-shop.git#subdirectory=backend"
+# git-based install, pinned to a release tag — what the website should
+# actually depend on. Not "always latest" on purpose: pin to an explicit,
+# tested version, bump it deliberately — see "Releasing a new version" below.
+pip install "frameshop-pricing @ git+https://github.com/ltellin/frame-shop.git@v0.1.0#subdirectory=backend"
 ```
 
 ```python
@@ -53,6 +56,20 @@ Lumber prices, Finish/Extra/joinery rates, tooling-work rate, and markup all
 live in `backend/frameshop_pricing/data/shop_pricing_data.py` — edit that file
 directly for your shop's real numbers; `get_moulding(id)` reads from
 `backend/frameshop_pricing/data/moulding_catalog.py`, same pattern.
+
+### Releasing a new version
+
+The website pins to a tag, not to `main` — a dependency that changes under a
+consuming app without anyone deciding to bump it is a reproducibility hazard,
+not a convenience. To ship a frame-shop change to the website:
+
+1. Make the change; CI (`.github/workflows/test.yml`) runs the test suite on
+   every push — only tag a commit where it's green.
+2. Bump `version` in `backend/pyproject.toml` (semver) and add an entry to
+   `backend/CHANGELOG.md`.
+3. `git tag vX.Y.Z && git push origin vX.Y.Z`.
+4. In the website repo, bump the pinned tag in its dependency file and
+   reinstall — a deliberate, reviewable one-line diff, not implicit drift.
 
 ## The previous prototype
 
