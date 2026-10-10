@@ -1,28 +1,33 @@
 # Lumber
 
-> Status: **first-pass specification.** Documented as a current domain assumption.
-> Not final, not an implementation instruction. Do **not** design the lumber
-> purchasing / inventory system — this is only the price-reference concept.
+> Status: **first-pass specification, milling-geometry details settled.**
+> Documented as a current domain assumption. Not final, not an implementation
+> instruction. Do **not** design the lumber purchasing / inventory system —
+> this is only the price-reference concept.
 
 ---
 
 # Definition
 
 **Lumber** is the rough stock the shop buys to mill its own mouldings: a species
-(from the [`Material`](material.md) list) at a nominal **thickness** (e.g. 4/4,
-5/4, 6/4, 8/4), together with its **current price**.
+(from the [`Material`](material.md) list) at a nominal **thickness** and
+**width**, together with its **current price**.
 
-This is the "place to store the pricing info of whatever lumber source is being
-used." It is **reference data** — periodically updated — and is kept separate
-from transaction history (an accepted order must not move when a lumber price is
-updated later).
+This is the **master lumber price list** — the record of what boards the shop
+commonly buys and what they currently cost from its lumber yard. In practice
+this stays a **short list**: picture-frame stock doesn't vary in size all that
+much, so a shop only buys a handful of (species, thickness, width) combinations.
+It should be easy for the shop to view and update by hand every so often when
+the lumber yard's prices change. It is **reference data** — periodically
+updated — and is kept separate from transaction history (an accepted order must
+not move when a lumber price is updated later).
 
 ---
 
 # Responsibilities
 
 - Hold the current cost of each stock type the shop buys, so the pricing engine
-  can look it up by (species, thickness).
+  can look it up by (species, thickness, width).
 - Be updatable when the shop's lumber source changes its prices.
 - Stay distinct from any historical / accepted-order pricing snapshot.
 
@@ -33,22 +38,42 @@ updated later).
 Tentative. Not a schema.
 
 - **species** (matches a `Material` species)
-- **nominal thickness** (4/4, 5/4, 6/4, 8/4, … — the stock steps the shop buys)
-- **price** per **board foot** (unit assumed — see Open Questions)
+- **nominal thickness** — **settled stock steps: 4/4, 5/4, 6/4, 8/4**. Actual
+  **S4S (surfaced four sides) dressed thickness** — what a Moulding's
+  `source_lumber_size` should actually use — is thinner than the "quarter"
+  name suggests: **4/4 → 0.75", 5/4 → 1.0625" (1-1/16"), 6/4 → 1.25", 8/4 →
+  1.75"**. (An earlier pass in this doc used rough, pre-surfacing numbers —
+  corrected here against this shop's real lumber yard price sheet.) More
+  thickness steps can be added later if a Moulding needs deeper stock; a few
+  species are also available as pre-squared stock (3"×3", 4"×4").
+- **nominal width** — the stocked board widths the shop buys in (this shop's
+  actual S4S widths: 1.5", 3.5", 5.5", 7.25", 9.25", 11.25" — standard
+  dressed widths for nominal 2"/4"/6"/8"/10"/12" stock). No generic "list of
+  stocked widths" to define here — a specific board size is named explicitly
+  per Moulding via `source_lumber_size` (see
+  [`moulding.md`](moulding.md)); a lumber row exists for whichever
+  (thickness, width) combinations those actually reference.
+- **price** per **board foot** (settled — see
+  [`../decisions/0003-milling-orientation-and-lumber-table-keying.md`](../decisions/0003-milling-orientation-and-lumber-table-keying.md))
 - last-updated / effective date
-- optional: grade / quality (FAS, Select, …) — out of scope for now, flag only
+- ~~grade / quality~~ — **not modelled** (settled: one price per species ×
+  thickness × width)
 - optional: source / supplier label
 
 ---
 
 # Relationships
 
-- **Material** — names the species; Lumber holds the thicknesses and prices for
-  that species.
-- **Moulding** — a Moulding's geometry selects the **required thickness** (and
-  the blank size) → which lumber row is used.
-- **Pricing** — `bare_material_price_per_foot` reads a lumber price; see
-  [`pricing.md`](pricing.md).
+- **Material** — names the species; Lumber holds the thicknesses, widths, and
+  prices for that species.
+- **Moulding** — `source_lumber_size` (per milling orientation, see
+  [`moulding.md`](moulding.md)) names the exact (thickness, width) to look up
+  here — an explicit, shop-editable fact, not computed from geometry. **A
+  single stocked board can yield more than one side-by-side moulding stick** —
+  that yield isn't modelled explicitly here; it's folded into the Moulding's
+  [`waste factor`](moulding.md).
+- **Pricing** — `bare_material_price_per_foot` reads a lumber price by
+  (species, thickness, width); see [`pricing.md`](pricing.md).
 
 ---
 
@@ -64,6 +89,8 @@ pricing._
 - Time-varying: prices change; the table is the *current* truth only.
 - Historical / accepted work snapshots the price it used and does not re-read
   this table.
+- No glue-ups: the shop always buys stock already at or above the needed
+  thickness — a lumber row is never combined with another to reach a size.
 - Every species on the `Material` list should have at least one lumber row for
   the pricing chain to work (enforcement TBD).
 
@@ -79,17 +106,13 @@ is deferred (shared with `Material` / `DesignMoulding`).
 
 # Open Questions
 
-Mirrored in [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md):
-
-- Unit of pricing — board foot assumed; confirm. Is it ever per linear foot or
-  per piece?
-- How is the table keyed — species × nominal thickness only, or also width /
-  length / grade?
-- What thickness steps does the shop actually stock?
-- Can thinner stock be glued up to reach a needed thickness, and how does that
-  change the cost?
-- Does grade / quality need to be modelled, or is one price per (species,
-  thickness) enough?
+Mirrored in [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md). Unit, keying,
+thickness steps, glue-ups, and grade are **settled** (see
+[`../decisions/0003-milling-orientation-and-lumber-table-keying.md`](../decisions/0003-milling-orientation-and-lumber-table-keying.md)).
+Stocked board widths — **resolved**: there's no generic list to define; each
+Moulding's `source_lumber_size` names its own board size directly (see
+[`../decisions/0007-source-lumber-size.md`](../decisions/0007-source-lumber-size.md)).
+No open questions remain on Lumber itself.
 
 ---
 
@@ -97,7 +120,7 @@ Mirrored in [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md):
 
 ```python
 # reference lookup — current price only
-def lookup_lumber_price_per_bf(lumber_table, species, nominal_thickness):
-    row = lumber_table.get(species=species, thickness=nominal_thickness)
+def lookup_lumber_price_per_bf(lumber_table, species, nominal_thickness, nominal_width):
+    row = lumber_table.get(species=species, thickness=nominal_thickness, width=nominal_width)
     return row.price_per_board_foot
 ```

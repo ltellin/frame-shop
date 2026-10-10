@@ -20,9 +20,10 @@ It references / contains:
 - an **optional source Offering** (the `Offering` it was instantiated from, if
   any)
 - design-specific dimensional / context information
-- joinery method
-- current calculated pricing information or a pricing result — **exact structure
-  undecided**
+- **joinery method** — `"underpinning"` | `"splining"` for now. Not just a
+  production note: **it prices differently** (splining is roughly 3× the labor
+  of underpinning). See [`pricing.md`](pricing.md).
+- a **price breakdown** (not a single number) — see Derived Values
 
 A Design will eventually contain one or more design-specific framing components;
 `DesignMoulding` is the first of those. (Future siblings: `DesignGlazing`,
@@ -91,18 +92,40 @@ Tentative. Not a schema.
 - reference to a Material
 - reference to a Finish
 - Extras[] (zero or more)
-- **joinery method** — how the frame's corners / lengths are joined (e.g.
-  chop-and-join vs joining from length; underpinner vs splines / dowels). A
-  design-specific choice; kept loose for now, not enumerated as a decision. Not a
-  Moulding fact.
+- **joinery method** — `"underpinning"` | `"splining"` for now, more may be
+  added later. A design-specific choice, not a Moulding fact. **Prices
+  differently**: a flat charge per frame, looked up by method, added as its own
+  line on the custom path or baked into an Offering's menu price on the
+  Offering path — see [`pricing.md`](pricing.md).
+- **milling orientation** — `from_board_edge` (**default**) | `from_board_face`.
+  Which way the moulding is cut from a board:
+  - `from_board_edge` — face width ↔ board thickness, overall height ↔ board
+    width. The moulding's decorative face is what was the board's edge. (This is
+    the common case — see the 3/4"×2" example in [`moulding.md`](moulding.md).)
+  - `from_board_face` — overall height ↔ board thickness, face width ↔ board
+    width. Rotated 90° from the above; the decorative face is what was the
+    board's broad face.
+
+  Same [`lumber.md`](lumber.md) lookup and pricing-formula shape either way —
+  only which geometry dimension is looked up as thickness vs width changes. Not
+  a Moulding fact: the same Moulding geometry could in principle be milled
+  either way for different Designs, so the choice lives here.
 - `source_offering` — optional reference; null for fully custom
 - design-specific dimensions (finished size / sight size / etc. — depends on how
   Design frames dimensions, which is not yet specified)
 - **float gap** — for a DesignMoulding whose Moulding is FLOAT, the space between
   the edge of the artwork and the inside of the moulding. **Default 1/4".**
   Required to specify a float frame's dimensions; irrelevant for STANDARD.
-- quantity (or is quantity on the Design? — open question)
-- current price result — shape undecided
+- **`non_offering_labor_charge`** (optional override, per foot) — only relevant
+  once the DesignMoulding is priced as custom (`matches_source_offering()` is
+  false — see [`pricing.md`](pricing.md)). Defaults from a shop-configured rate;
+  exposed to the designer to override for this specific piece once the
+  divergence is flagged. Applies identically whether fully custom or diverged
+  from an Offering.
+
+**Not on DesignMoulding**: `quantity` — **settled** to live on
+[`design.md`](design.md) instead. Quantity multiplies a Design's whole total,
+not any one moulding line — see [`pricing.md`](pricing.md).
 
 ---
 
@@ -111,8 +134,9 @@ Tentative. Not a schema.
 - **Design** — a DesignMoulding belongs to exactly one Design. Required — a
   DesignMoulding has no meaning without its Design.
 - **Moulding / Material / Finish / Extra** — references one of the first three,
-  zero-or-more of the last. Material, Finish, Extras, **joinery method**, and the
-  **float gap** are carried here, not on the Moulding.
+  zero-or-more of the last. Material, Finish, Extras, **joinery method**, the
+  **float gap**, and the **milling orientation** are carried here, not on the
+  Moulding.
 - **Offering** — optional `source_offering`.
 - **Pricing** — a DesignMoulding is the primary unit the moulding pricing engine
   operates on.
@@ -123,7 +147,10 @@ Tentative. Not a schema.
 
 # Derived Values
 
-- current price (from the pricing engine, given a pricing context)
+- **price breakdown** — `price_moulding_line()` in [`pricing.md`](pricing.md);
+  a structured dict (e.g. `bare_material`, `material_markup`, `finish`,
+  `extras`, `non_offering_labor_charge` or `offering_price`, `joinery`,
+  `tooling_work_labor`, `total`), **not a single number**. **Settled**.
 - **required linear footage** — from Moulding face width + finished size
 - **billable footage** — `max(required footage, minimum footage)`, where the
   minimum is `Moulding.minimum_footage` or the shop default (currently 4 ft)
@@ -131,9 +158,12 @@ Tentative. Not a schema.
   (see [`pricing.md`](pricing.md)); the first pricing layer, before finish /
   extras / joinery / labour / markup
 - finished / outer frame size
-- whether it still exactly matches `source_offering` (by comparison)
-- whether it is still eligible for standard (vs custom) pricing — open question
-  whether this is derived, flagged, or explicit
+- **`matches_source_offering`** — exact-match comparison against `source_offering`
+  (Moulding, Material, Finish, and the Extras set all identical). **Settled**:
+  no partial credit — see [`pricing.md`](pricing.md).
+- **pricing path** — `matches_source_offering` true → `Offering.menu_price_per_foot
+  × billable footage`; false (fully custom, or diverged) → the computed chain
+  plus `non_offering_labor_charge`. **Settled**, see [`pricing.md`](pricing.md).
 
 ---
 
@@ -143,7 +173,11 @@ Tentative. Not a schema.
 - `source_offering` is optional and may be null.
 - Having a `source_offering` does **not** lock the configuration — it may
   diverge, and the origin is still recorded.
-- An Extra on a DesignMoulding does not by itself make it "custom".
+- An Extra on a DesignMoulding does not by itself make it "custom" — but if that
+  Extra isn't part of the source Offering's recipe, it **does** break the exact
+  match and drop the line to custom pricing (these are two different claims:
+  Extras are legitimate on standard products in general, but *this specific*
+  DesignMoulding either matches its *specific* Offering or it doesn't).
 
 ---
 
@@ -172,26 +206,27 @@ shop/catalog/material pricing data changes later.*
 
 # Open Questions
 
-Mirrored in [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md):
+**Settled** this round: the exact-match rule (`matches_source_offering`, no
+partial credit) and its pricing consequence (Offering rate vs. custom chain +
+`non_offering_labor_charge`) — see
+[`../decisions/0005-offering-pricing-and-non-offering-labor-charge.md`](../decisions/0005-offering-pricing-and-non-offering-labor-charge.md).
+Also settled: `quantity` lives on Design; joinery method vocabulary and its
+flat-per-frame pricing; the price breakdown is structured, not a single number
+— see
+[`../decisions/0006-pricing-context-tooling-labor-joinery-and-markup.md`](../decisions/0006-pricing-context-tooling-labor-joinery-and-markup.md).
 
-- How do we determine whether a DesignMoulding still exactly matches its source
-  Offering after edits?
-- Does modifying a DesignMoulding from an Offering automatically remove standard
-  pricing eligibility? Can some customizations keep standard pricing while others
-  trigger custom pricing?
+Still open, mirrored in [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md):
+
 - What exactly gets snapshotted at acceptance, and is the source Offering
-  identity part of it?
-- Where does `quantity` live — DesignMoulding or Design?
-- What is the structure of the "current price result" it holds?
+  identity (and its `menu_price_per_foot` at the time) part of it?
 - How do multiple DesignMouldings in one Design express their spatial /
   structural relationship (build-up: outer frame + liner)?
 - Can Moulding / Material / Finish be placeholders during early design?
-- What is the **joinery method** vocabulary, and does the choice feed pricing
-  and/or production (labor, equipment)?
 - Can a float **Offering** pin its own gap, or is the float gap only defaulted
   per DesignMoulding?
-- Where does the **shop-default minimum footage** live (a shop-settings /
-  pricing-context concept, not literally each Design row)?
+- Where does the **shop-default minimum footage** live within `PricingContext`
+  precisely (its presence in `PricingContext` is settled; the surrounding
+  shop-settings concept, if any, is not)?
 - Does the minimum footage also scale finish / other per-foot charges, or only
   the bare moulding material?
 
@@ -199,17 +234,6 @@ Mirrored in [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md):
 
 # Pseudocode Sketch
 
-Illustrative only — not a decision about structure or where values live.
-
-```python
-def price_design_moulding(
-    moulding,        # geometry + tooling work
-    material,        # species -> current lumber cost via pricing_context
-    finish,          # -> finish materials + labor
-    extras,          # list -> materials + labor + tooling
-    dimensions,      # design-specific finished size
-    source_offering, # Offering or None -> standard vs custom behavior
-    pricing_context, # shop rates, current lumber prices, markup rules
-):
-    ...  # deferred — Phase 6. Objects expose facts; this engine consumes them.
-```
+See [`pricing.md`](pricing.md) for `price_moulding_line(design_moulding, design,
+pricing_context)` — the concrete, current version of this now that Phases 2–6
+are specified.

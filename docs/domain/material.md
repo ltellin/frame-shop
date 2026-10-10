@@ -100,10 +100,12 @@ Key conceptual split to keep:
 
 # Open Questions
 
-Mirrored in [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md):
+Mirrored in [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md). Which geometry
+dimension maps to required board thickness, and the stocked thickness steps, are
+now **settled** (see [`lumber.md`](lumber.md) and
+[`../decisions/0003-milling-orientation-and-lumber-table-keying.md`](../decisions/0003-milling-orientation-and-lumber-table-keying.md)).
+Still open:
 
-- Which Moulding geometry dimension maps to the **required board thickness**, and
-  what standard stock thicknesses does the shop stock?
 - Can Material be a placeholder on a DesignMoulding during early design?
 - Do laminated / multi-material profiles ever need modelling? (Out of scope now.)
 - When does a species category (hardwood / exotic / …) start to matter?

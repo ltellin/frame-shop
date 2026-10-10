@@ -27,6 +27,14 @@ package structure for code that does not yet exist.
 - **Pricing objects expose facts, not methods.** Moulding, Material, Finish,
   Extra, and Offering carry data a pricing engine consumes; they do not compute
   prices themselves.
+- **Simple pricing reference data lives together, hardcoded, and easy to
+  hand-edit.** Lumber prices, Finish per-foot rates, Extra rates, and
+  waste-factor guidance are all name/key → rate lookups with no real business
+  logic of their own. The owner's preference is to keep them colocated (one
+  file or directory) rather than scattered, so new values can be plugged in
+  without hunting through the codebase. Exact format (a Python module, JSON,
+  YAML, …) is an implementation decision for whenever this is actually built —
+  not decided now.
 
 ## Not decided yet
 

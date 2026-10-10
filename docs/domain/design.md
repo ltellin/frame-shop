@@ -34,7 +34,10 @@ Tentative. Not a schema.
 - the collection of design components (DesignMoulding(s), later others)
 - optional artwork association / metadata — or another framed object (a mirror)
 - optional customer association
-- quantity (or is quantity per-component? — open question)
+- **`quantity`** — **settled**: lives here, not on any individual component
+  (e.g. `DesignMoulding`). Multiplies the Design's whole computed total — see
+  [`pricing.md`](pricing.md). Still open: default value, and whether it means
+  "N identical copies" or something more nuanced.
 - timestamps
 
 # Relationships

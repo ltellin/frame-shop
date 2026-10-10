@@ -11,6 +11,12 @@ Records so far:
 
 - [`0001-moulding-geometry-and-tooling-work.md`](0001-moulding-geometry-and-tooling-work.md)
 - [`0002-material-and-bare-moulding-material-cost.md`](0002-material-and-bare-moulding-material-cost.md)
+- [`0003-milling-orientation-and-lumber-table-keying.md`](0003-milling-orientation-and-lumber-table-keying.md)
+- [`0004-finish-and-extra-pricing.md`](0004-finish-and-extra-pricing.md)
+- [`0005-offering-pricing-and-non-offering-labor-charge.md`](0005-offering-pricing-and-non-offering-labor-charge.md)
+- [`0006-pricing-context-tooling-labor-joinery-and-markup.md`](0006-pricing-context-tooling-labor-joinery-and-markup.md)
+- [`0007-source-lumber-size.md`](0007-source-lumber-size.md)
+- [`0008-finish-two-rate-pricing.md`](0008-finish-two-rate-pricing.md)
 
 ## When to add a record
 
