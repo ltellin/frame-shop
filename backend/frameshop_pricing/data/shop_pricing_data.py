@@ -190,6 +190,12 @@ JOINERY_RATES: dict[JoineryMethod, float] = {
     JoineryMethod.SPLINING: 85.00,
 }
 
+# Flat $ per frame, added for CHOP and JOIN order forms (not LENGTH) — the
+# cutting/mitering charge, same shape as JOINERY_RATES but for the cut
+# rather than the assembly. See docs/decisions/0009-length-chop-join-order-form.md.
+# EXAMPLE VALUE.
+CHOP_CHARGE_PER_FRAME: float = 12.00
+
 # $ per tooling-work point, per foot. Applies to every moulding line,
 # Offering-priced or not. EXAMPLE VALUE.
 TOOLING_WORK_RATE_PER_FOOT: float = 2.5

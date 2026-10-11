@@ -27,6 +27,20 @@ class JoineryMethod(str, Enum):
     SPLINING = "splining"
 
 
+class OrderForm(str, Enum):
+    """The wholesale moulding trade's standard classification for how far a
+    stick is processed before it ships. See docs/decisions/0009-*.md.
+
+    LENGTH - raw, uncut stock, priced per foot. No target frame size.
+    CHOP   - cut to the four mitered pieces for a frame size, not assembled.
+    JOIN   - chopped and corner-assembled into a finished frame.
+    """
+
+    LENGTH = "LENGTH"
+    CHOP = "CHOP"
+    JOIN = "JOIN"
+
+
 @dataclass(frozen=True)
 class Moulding:
     """A geometry / fabrication specification. See docs/domain/moulding.md.
@@ -128,9 +142,23 @@ class MouldingLineInput:
     material: str
     finish: str
     extras: tuple[Extra, ...]
-    finished_width_in: float
-    finished_height_in: float
+    # Required for CHOP/JOIN (the default); irrelevant for LENGTH, which has
+    # no target frame size — use requested_footage_ft instead.
+    finished_width_in: float | None = None
+    finished_height_in: float | None = None
     milling_orientation: MillingOrientation = MillingOrientation.FROM_BOARD_EDGE
     joinery_method: JoineryMethod = JoineryMethod.UNDERPINNING
     source_offering: Offering | None = None
     non_offering_labor_charge_override: float | None = None
+    # See docs/decisions/0009-length-chop-join-order-form.md
+    order_form: OrderForm = OrderForm.JOIN
+    requested_footage_ft: float | None = None  # required, and only used, when order_form is LENGTH
+
+    def __post_init__(self) -> None:
+        if self.order_form == OrderForm.LENGTH:
+            if self.requested_footage_ft is None:
+                raise ValueError("requested_footage_ft is required when order_form is LENGTH")
+        elif self.finished_width_in is None or self.finished_height_in is None:
+            raise ValueError(
+                "finished_width_in and finished_height_in are required unless order_form is LENGTH"
+            )

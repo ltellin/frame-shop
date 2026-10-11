@@ -168,6 +168,8 @@ Still open:
 `PricingContext`'s shape and the full Phase 6 moulding-pricing chain (tooling
 labor, joinery, material markup) are **settled** — see
 [`decisions/0006-pricing-context-tooling-labor-joinery-and-markup.md`](decisions/0006-pricing-context-tooling-labor-joinery-and-markup.md).
+The Length/Chop/Join order-form split is also **settled** — see
+[`decisions/0009-length-chop-join-order-form.md`](decisions/0009-length-chop-join-order-form.md).
 Still open:
 
 32. Which price inputs are **live data** vs **shop-defined pricing config**, and
@@ -177,46 +179,52 @@ Still open:
 34. Does **material markup** ever extend beyond the bare lumber cost — to
     Finish, Extras, or the other Design materials (mats, mounting, glazing)
     once those exist — or does it stay lumber-only?
+35. **Offering is currently scoped to `JOIN` only (ADR 0009), but the owner
+    expects to want it to cover Length/Chop too** (a real supplier catalog
+    typically publishes a standard price for all three forms of the same
+    recipe, not just the assembled one) — this isn't a maybe, it's known
+    future work. Needs its own design pass: does `Offering` get three price
+    points (`menu_price_per_foot` per order form), or something else?
 
 ## Strainer
 
-35. Should Strainer eventually be a separate Design component (a
+36. Should Strainer eventually be a separate Design component (a
     `DesignStrainer`, parallel to `DesignMoulding`)?
-36. What conditions should recommend or require a strainer (size, profile
+37. What conditions should recommend or require a strainer (size, profile
     strength, glazing weight, assembly weight)?
-37. Does a strainer need its own geometry / material / fabrication model, and how
+38. Does a strainer need its own geometry / material / fabrication model, and how
     much would it genuinely share with Moulding? (Do **not** pre-emptively
     extract a shared `ProfileGeometry`.)
 
 ## State (payment / production / fulfillment)
 
-38. Are payment, production, and fulfillment genuinely **independent facets**,
+39. Are payment, production, and fulfillment genuinely **independent facets**,
     tracked separately rather than as one status? (Working assumption: yes.)
-39. Which state is **explicitly recorded** by a worker vs **derived** from
+40. Which state is **explicitly recorded** by a worker vs **derived** from
     prerequisites?
 
 ## Production
 
-40. What are the real **production operations** a frame shop performs, and can
+41. What are the real **production operations** a frame shop performs, and can
     they be a small fixed set per job type rather than a configurable workflow?
-41. How are **daily production / pick / cut lists** derived from canonical data
+42. How are **daily production / pick / cut lists** derived from canonical data
     (never a stored list as source of truth)?
-42. Can frame prep and artwork prep proceed **in parallel** rather than as a
+43. Can frame prep and artwork prep proceed **in parallel** rather than as a
     strict sequence?
 
 ## Catalog / vendor / lumber
 
-43. Which catalog attributes are common to all products vs category-specific?
-44. How is **catalog / lumber reference data** kept separate from **transaction
+44. Which catalog attributes are common to all products vs category-specific?
+45. How is **catalog / lumber reference data** kept separate from **transaction
     history** so price / availability changes never alter past orders?
-45. How is catalog and lumber-price data loaded and updated (hand-edited file,
+46. How is catalog and lumber-price data loaded and updated (hand-edited file,
     spreadsheet import, vendor feed)?
 
 ## Cross-cutting / architecture
 
-46. Relational database — which one, and when is it introduced?
-47. Money representation (integer minor units assumed) and measurement
+47. Relational database — which one, and when is it introduced?
+48. Money representation (integer minor units assumed) and measurement
     representation (decimal inches with fraction input assumed) — confirm.
-48. Multi-station simultaneous use — what concurrency guarantees, and when?
-49. Auth / roles / who-can-do-what — deferred; flag where it touches the model.
-50. Images / an eventual camera over the design table — skeleton only, deferred.
+49. Multi-station simultaneous use — what concurrency guarantees, and when?
+50. Auth / roles / who-can-do-what — deferred; flag where it touches the model.
+51. Images / an eventual camera over the design table — skeleton only, deferred.

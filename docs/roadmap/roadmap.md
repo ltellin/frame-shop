@@ -108,6 +108,16 @@ stages are not collapsed.
   tooling-work-labor formula shape; whether markup extends beyond lumber.
   **Implemented** — see `backend/frameshop_pricing/engine.py` (see the sequence-deviation
   note above).
+- Phase 6a (Length / Chop / Join order form, added 2026-10-11): **settled** —
+  the wholesale-trade three-tier classification (raw stock / cut-not-joined /
+  cut-and-joined), layered additively on the existing chain via `order_form`
+  on `MouldingLineInput` (default `JOIN`, unchanged shop-mode behavior).
+  Offering pricing and `non_offering_labor_charge` scoped to `JOIN` only;
+  `flat` Extras `JOIN` only; `per_length` Extras, Finish, and tooling-work
+  labor apply at every tier — see
+  `docs/decisions/0009-length-chop-join-order-form.md`. Open and *expected*
+  follow-up: Offering getting its own Length/Chop price points. **Implemented**
+  — see `backend/frameshop_pricing/engine.py`.
 - Phase 7 (Artwork): started, paused mid-SPECIFY for the Phase 1–6
   implementation push. Not finalized.
 - Phases 8+: not started.

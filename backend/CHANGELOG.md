@@ -4,6 +4,27 @@ All notable changes to `frameshop-pricing` are recorded here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions
 follow [semver](https://semver.org/).
 
+## 0.2.0 — 2026-10-11
+
+Adds **Length / Chop / Join** wholesale order-form pricing — the standard
+moulding-trade classification for how far a stick is processed before it
+ships. See `docs/decisions/0009-length-chop-join-order-form.md`.
+
+- `MouldingLineInput.order_form` (`LENGTH` | `CHOP` | `JOIN`, default `JOIN` —
+  no behavior change for existing shop-mode callers) and
+  `requested_footage_ft` (for `LENGTH`, which has no target frame size;
+  `finished_width_in`/`finished_height_in` are now optional, required only
+  for `CHOP`/`JOIN`).
+- New `PricingContext.chop_charge_per_frame`, added for `CHOP` and `JOIN`.
+- Offering pricing and `non_offering_labor_charge` are now `JOIN`-only;
+  `matches_source_offering` returns `False` for any other order form.
+- `extras_cost` split into `per_length_extras_cost` (every order form) and
+  `flat_extras_cost` (`JOIN` only).
+- **Breaking:** `extras_cost` removed, replaced by the two functions above.
+  `MouldingLineInput.finished_width_in`/`finished_height_in` are now optional
+  keyword fields rather than required positional-or-keyword ones (callers
+  using keyword arguments, as documented, are unaffected).
+
 ## 0.1.0 — 2026-10-10
 
 First release. Prices one moulding line end to end — see

@@ -1,6 +1,6 @@
 [project]
 name = "frameshop-pricing"
-version = "0.1.0"
+version = "0.2.0"
 description = "Moulding pricing engine for the frame-shop domain model"
 requires-python = ">=3.10"
 dependencies = []

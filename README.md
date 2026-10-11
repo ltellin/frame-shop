@@ -14,7 +14,7 @@ still docs-only.
 | Path | |
 |---|---|
 | [`AGENTS.md`](AGENTS.md) | how coding agents (and people) should work in this repo |
-| [`backend/frameshop_pricing/`](backend/frameshop_pricing/) | **implemented**: the moulding pricing engine (Phases 1–6) — `models.py`, `geometry.py`, `pricing_context.py`, `engine.py`, `data/shop_pricing_data.py` (real lumber prices + example rates), tests in `backend/tests/`. Decoupled from Design/DesignMoulding via `MouldingLineInput` since those aren't specified yet |
+| [`backend/frameshop_pricing/`](backend/frameshop_pricing/) | **implemented**: the moulding pricing engine (Phases 1–6, plus Length/Chop/Join wholesale pricing) — `models.py`, `geometry.py`, `pricing_context.py`, `engine.py`, `data/shop_pricing_data.py` (real lumber prices + example rates), `catalog.py` + `data/moulding_catalog.py`, tests in `backend/tests/`. Decoupled from Design/DesignMoulding via `MouldingLineInput` since those aren't specified yet |
 | [`docs/domain/overview.md`](docs/domain/overview.md) | relationship map + glossary — read first |
 | [`docs/domain/`](docs/domain/) | one file per domain concept; `moulding`, `material`, `lumber`, `finish`, `extra`, `offering`, `design-moulding` have first-pass specs, the rest are stubs |
 | [`docs/decisions/`](docs/decisions/) | settled decisions — ADRs 0001 (moulding geometry + tooling work), 0002 (material + bare moulding cost), 0003 (milling orientation + lumber-table keying), 0004 (finish + extra pricing), 0005 (offering pricing + non-offering labor charge), 0006 (pricing context + tooling labor + joinery + markup), 0007 (source lumber size), 0008 (finish two-rate pricing) |
@@ -37,7 +37,7 @@ pip install -e /path/to/frame-shop/backend
 # git-based install, pinned to a release tag — what the website should
 # actually depend on. Not "always latest" on purpose: pin to an explicit,
 # tested version, bump it deliberately — see "Releasing a new version" below.
-pip install "frameshop-pricing @ git+https://github.com/ltellin/frame-shop.git@v0.1.0#subdirectory=backend"
+pip install "frameshop-pricing @ git+https://github.com/ltellin/frame-shop.git@v0.2.0#subdirectory=backend"
 ```
 
 ```python

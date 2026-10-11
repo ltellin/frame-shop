@@ -41,8 +41,13 @@ one-off rule per extra:
 - **`per_length`** — a rate per linear foot, applied to the same **billable
   footage** used for the bare moulding material and Finish (working assumption
   — see Open Questions). Both current extras (inlay, matching spacers) are this
-  kind.
-- **`flat`** — a single fixed charge regardless of size.
+  kind. **Applies at every Length/Chop/Join order form** — a continuous inlay
+  runs along the stick whether it's cut or not.
+- **`flat`** — a single fixed charge regardless of size. **Applies at `JOIN`
+  only** — a flat extra typically describes something about the finished,
+  assembled piece (e.g. a hardware kit), which doesn't exist yet at Length or
+  Chop. See [`pricing.md`](pricing.md) and
+  [`../decisions/0009-length-chop-join-order-form.md`](../decisions/0009-length-chop-join-order-form.md).
 
 This keeps adding a new extra to a **data change** (add a row with a name,
 method, and rate) rather than a code change.
@@ -107,4 +112,5 @@ standard-pricing eligibility while others don't. See
 
 # Pseudocode Sketch
 
-See [`pricing.md`](pricing.md) for `extras_cost`.
+See [`pricing.md`](pricing.md) for `per_length_extras_cost` and
+`flat_extras_cost` (split by Length/Chop/Join tier — ADR 0009).

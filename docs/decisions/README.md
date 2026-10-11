@@ -17,6 +17,7 @@ Records so far:
 - [`0006-pricing-context-tooling-labor-joinery-and-markup.md`](0006-pricing-context-tooling-labor-joinery-and-markup.md)
 - [`0007-source-lumber-size.md`](0007-source-lumber-size.md)
 - [`0008-finish-two-rate-pricing.md`](0008-finish-two-rate-pricing.md)
+- [`0009-length-chop-join-order-form.md`](0009-length-chop-join-order-form.md)
 
 ## When to add a record
 

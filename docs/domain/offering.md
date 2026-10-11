@@ -89,6 +89,11 @@ Not now, but an Offering may eventually relate to:
   all) falls to the computed custom chain plus a `non_offering_labor_charge`.
   See [`pricing.md`](pricing.md) and
   [`design-moulding.md`](design-moulding.md).
+- **Length / Chop / Join** — **settled (ADR 0009): Offering pricing applies
+  only to `order_form == JOIN`.** A `LENGTH` or `CHOP` DesignMoulding can
+  never be Offering-priced, even if it names a `source_offering` and matches
+  its recipe exactly — an Offering represents a standard *finished, assembled*
+  product; raw or cut-but-unassembled stock is a categorically different sale.
 
 ---
 

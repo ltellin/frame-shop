@@ -20,6 +20,7 @@ class PricingContext:
     finish_rates: dict[str, FinishRate]  # finish name -> two-rate pricing
     extra_rates: dict[str, ExtraRate]  # extra name -> rate
     joinery_rates: dict[JoineryMethod, float]  # joinery method -> flat $ per frame
+    chop_charge_per_frame: float  # flat $ per frame, added for CHOP and JOIN order forms
     tooling_work_rate_per_foot: float
     default_minimum_footage: float
     default_non_offering_labor_charge_per_foot: float
@@ -35,6 +36,7 @@ class PricingContext:
             finish_rates=d.FINISH_RATES,
             extra_rates=d.EXTRA_RATES,
             joinery_rates=d.JOINERY_RATES,
+            chop_charge_per_frame=d.CHOP_CHARGE_PER_FRAME,
             tooling_work_rate_per_foot=d.TOOLING_WORK_RATE_PER_FOOT,
             default_minimum_footage=d.DEFAULT_MINIMUM_FOOTAGE,
             default_non_offering_labor_charge_per_foot=d.DEFAULT_NON_OFFERING_LABOR_CHARGE_PER_FOOT,

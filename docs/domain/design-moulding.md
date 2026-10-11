@@ -122,6 +122,19 @@ Tentative. Not a schema.
   exposed to the designer to override for this specific piece once the
   divergence is flagged. Applies identically whether fully custom or diverged
   from an Offering.
+- **`order_form`** — `LENGTH` | `CHOP` | `JOIN`, **default `JOIN`**. The
+  wholesale-trade classification of how far the stick is processed: raw and
+  uncut, cut to miter but unassembled, or cut and corner-joined into a
+  finished frame. Shop-mode use never needs to touch this (it defaults to the
+  finished-frame behavior already described everywhere else in this doc);
+  supplier-mode use (selling moulding to other shops) sets it explicitly. Each
+  tier is additive on the one before — see [`pricing.md`](pricing.md) and
+  [`../decisions/0009-length-chop-join-order-form.md`](../decisions/0009-length-chop-join-order-form.md).
+  Offering pricing and `non_offering_labor_charge` only apply at `JOIN`.
+- **`requested_footage_ft`** — required only when `order_form` is `LENGTH`.
+  A `LENGTH` line has no target frame size at all (it's just "N feet of this
+  moulding, raw"), so it can't derive required footage from `finished size`
+  the way `CHOP`/`JOIN` do.
 
 **Not on DesignMoulding**: `quantity` — **settled** to live on
 [`design.md`](design.md) instead. Quantity multiplies a Design's whole total,

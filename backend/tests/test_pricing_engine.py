@@ -2,11 +2,13 @@ import pytest
 
 from frameshop_pricing.engine import (
     billable_footage,
-    extras_cost,
+    chop_charge,
     finish_cost,
+    flat_extras_cost,
     joinery_cost,
     matches_source_offering,
     material_markup_cost,
+    per_length_extras_cost,
     price_moulding_line,
     price_total,
     tooling_work_labor_cost,
@@ -21,6 +23,7 @@ from frameshop_pricing.models import (
     MouldingLineInput,
     MouldingType,
     Offering,
+    OrderForm,
 )
 from frameshop_pricing.pricing_context import PricingContext
 
@@ -41,6 +44,7 @@ def pricing_context():
             "trim": ExtraRate("flat", 10.0),
         },
         joinery_rates={JoineryMethod.UNDERPINNING: 8.0, JoineryMethod.SPLINING: 24.0},
+        chop_charge_per_frame=5.0,
         tooling_work_rate_per_foot=0.5,
         default_minimum_footage=4.0,
         default_non_offering_labor_charge_per_foot=3.0,
@@ -150,12 +154,22 @@ def test_finish_rate_rejects_a_marginal_rate_higher_than_base(pricing_context):
         FinishRate(base_rate_per_ft=1.0, marginal_rate_per_ft=1.5)
 
 
-def test_extras_cost_mixes_per_length_and_flat(pricing_context):
+def test_per_length_extras_cost_ignores_flat_extras(pricing_context):
     class Stub:
         extras = (Extra("inlay"), Extra("trim"))
 
-    # inlay: $4/ft x 5ft = 20; trim: flat $10
-    assert extras_cost(Stub(), billable_ft=5.0, pricing_context=pricing_context) == pytest.approx(30.0)
+    # only inlay (per_length) counts: $4/ft x 5ft = 20; trim (flat) is ignored here
+    assert per_length_extras_cost(Stub(), billable_ft=5.0, pricing_context=pricing_context) == pytest.approx(
+        20.0
+    )
+
+
+def test_flat_extras_cost_ignores_per_length_extras(pricing_context):
+    class Stub:
+        extras = (Extra("inlay"), Extra("trim"))
+
+    # only trim (flat) counts, regardless of footage
+    assert flat_extras_cost(Stub(), pricing_context=pricing_context) == pytest.approx(10.0)
 
 
 def test_offering_exact_match_bypasses_the_computed_chain(square_moulding, pricing_context):
@@ -201,10 +215,13 @@ def test_diverging_from_offering_falls_to_custom_pricing_with_upcharge(square_mo
 
     # every custom-path component should be present and independently correct
     assert breakdown["finish"] == pytest.approx(finish_cost(line, billable_ft, pricing_context))
-    assert breakdown["extras"] == pytest.approx(extras_cost(line, billable_ft, pricing_context))
+    assert breakdown["per_length_extras"] == pytest.approx(
+        per_length_extras_cost(line, billable_ft, pricing_context)
+    )
     assert breakdown["material_markup"] == pytest.approx(
         material_markup_cost(breakdown["bare_material"], pricing_context)
     )
+    assert breakdown["chop_charge"] == pytest.approx(chop_charge(pricing_context))
     assert breakdown["non_offering_labor_charge"] == pytest.approx(
         pricing_context.default_non_offering_labor_charge_per_foot * billable_ft
     )
@@ -268,3 +285,77 @@ def test_moulding_requires_at_least_one_source_lumber_size(square_moulding):
 
     with pytest.raises(ValueError):
         dataclasses.replace(square_moulding, source_lumber_size={})
+
+
+# --- Length / Chop / Join (ADR 0009) ---------------------------------------
+
+
+def test_length_line_requires_requested_footage_not_a_finished_size():
+    with pytest.raises(ValueError):
+        MouldingLineInput(
+            moulding=None, material="maple", finish="oil", extras=(),
+            order_form=OrderForm.LENGTH,
+        )
+
+
+def test_chop_and_join_lines_require_a_finished_size():
+    with pytest.raises(ValueError):
+        MouldingLineInput(moulding=None, material="maple", finish="oil", extras=())
+
+
+def test_length_chop_join_are_additive(square_moulding, pricing_context):
+    chop_line = make_line(square_moulding, order_form=OrderForm.CHOP)
+    join_line = make_line(square_moulding, order_form=OrderForm.JOIN)
+
+    chop_breakdown = price_moulding_line(chop_line, pricing_context)
+    join_breakdown = price_moulding_line(join_line, pricing_context)
+
+    # CHOP = LENGTH-shaped total (same billable footage) + chop_charge
+    assert chop_breakdown["chop_charge"] == pytest.approx(chop_charge(pricing_context))
+    chop_without_charge = chop_breakdown["total"] - chop_breakdown["chop_charge"]
+    length_equivalent = price_moulding_line(
+        make_line(square_moulding, order_form=OrderForm.LENGTH, requested_footage_ft=billable_footage(
+            chop_line, pricing_context
+        )),
+        pricing_context,
+    )["total"]
+    assert chop_without_charge == pytest.approx(length_equivalent)
+
+    # JOIN (non-offering) = CHOP + non_offering_labor_charge + flat_extras + joinery
+    assert join_breakdown["total"] == pytest.approx(
+        chop_breakdown["total"]
+        + join_breakdown["non_offering_labor_charge"]
+        + join_breakdown["flat_extras"]
+        + join_breakdown["joinery"]
+    )
+    assert join_breakdown["total"] > chop_breakdown["total"]
+
+
+
+def test_offering_pricing_never_applies_outside_join(square_moulding, pricing_context):
+    offering = Offering(
+        name="Black Maple Square", moulding=square_moulding, material="maple",
+        finish="oil", extras=(), menu_price_per_foot=15.0,
+    )
+    chop_line = make_line(square_moulding, order_form=OrderForm.CHOP, source_offering=offering)
+    length_line = make_line(
+        square_moulding, order_form=OrderForm.LENGTH, requested_footage_ft=10.0,
+        finished_width_in=None, finished_height_in=None, source_offering=offering,
+    )
+    # an exact recipe match everywhere except order_form still doesn't qualify
+    assert matches_source_offering(chop_line) is False
+    assert matches_source_offering(length_line) is False
+    assert "offering_price" not in price_moulding_line(chop_line, pricing_context)
+    assert "offering_price" not in price_moulding_line(length_line, pricing_context)
+
+
+def test_flat_extras_only_applied_at_join(square_moulding, pricing_context):
+    extras = (Extra("trim"),)  # "trim" is a flat extra in the fixture
+    chop_breakdown = price_moulding_line(
+        make_line(square_moulding, order_form=OrderForm.CHOP, extras=extras), pricing_context
+    )
+    join_breakdown = price_moulding_line(
+        make_line(square_moulding, order_form=OrderForm.JOIN, extras=extras), pricing_context
+    )
+    assert "flat_extras" not in chop_breakdown
+    assert join_breakdown["flat_extras"] == pytest.approx(10.0)
