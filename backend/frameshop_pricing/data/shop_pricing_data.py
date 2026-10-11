@@ -186,7 +186,7 @@ EXTRA_RATES: dict[str, ExtraRate] = {
 
 # Joinery method -> flat $ per frame (not per corner, not per foot).
 JOINERY_RATES: dict[JoineryMethod, float] = {
-    JoineryMethod.UNDERPINNING: 8.00,
+    JoineryMethod.UNDERPINNING: 35.00,
     JoineryMethod.SPLINING: 85.00,
 }
 
