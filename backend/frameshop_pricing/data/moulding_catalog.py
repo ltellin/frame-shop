@@ -31,7 +31,7 @@ MOULDINGS: dict[int, Moulding] = {
         tooling_work=1,  # simple square profile, table-saw passes only
         waste_factor=1.1,
         source_lumber_size={
-            MillingOrientation.FROM_BOARD_EDGE: (0.5, 3.5),
+            MillingOrientation.FROM_BOARD_EDGE: (0.75, 3.5),  # planed down from 4/4 S4S x 3-1/2"
         },
         rabbet_depth_in=0.25,
         rabbet_height_in=0.375,
@@ -45,7 +45,7 @@ MOULDINGS: dict[int, Moulding] = {
         tooling_work=1,  # simple square profile, table-saw passes only
         waste_factor=1.1,
         source_lumber_size={
-            MillingOrientation.FROM_BOARD_EDGE: (0.5, 3.5),
+            MillingOrientation.FROM_BOARD_EDGE: (0.75, 3.5),  # planed down from 4/4 S4S x 3-1/2"
         },
         rabbet_depth_in=0.25,
         rabbet_height_in=1.625,
@@ -136,7 +136,7 @@ MOULDINGS: dict[int, Moulding] = {
         diagram_path="diagrams/2006-rounded-slant-tall.png",
     ),
     # --- 3000s: 1" wide versions of the 2000s — same heights/tooling/waste,
-    # just a wider face and matching board thickness ---
+    # just a wider face, milled from 5/4 S4S (1-1/16") stock ---
     3001: Moulding(
         name='1" Square',
         type=MouldingType.STANDARD,
@@ -145,7 +145,7 @@ MOULDINGS: dict[int, Moulding] = {
         tooling_work=1,
         waste_factor=1.1,
         source_lumber_size={
-            MillingOrientation.FROM_BOARD_EDGE: (1.0, 3.5),
+            MillingOrientation.FROM_BOARD_EDGE: (1.0625, 5.5),  # 5/4 S4S x 5-1/2", ripped
         },
         rabbet_depth_in=0.25,
         rabbet_height_in=0.375,
@@ -159,7 +159,7 @@ MOULDINGS: dict[int, Moulding] = {
         tooling_work=1,
         waste_factor=1.1,
         source_lumber_size={
-            MillingOrientation.FROM_BOARD_EDGE: (1.0, 3.5),
+            MillingOrientation.FROM_BOARD_EDGE: (1.0625, 5.5),  # 5/4 S4S x 5-1/2", ripped
         },
         rabbet_depth_in=0.25,
         rabbet_height_in=1.625,
@@ -173,7 +173,7 @@ MOULDINGS: dict[int, Moulding] = {
         tooling_work=2,
         waste_factor=1.25,
         source_lumber_size={
-            MillingOrientation.FROM_BOARD_EDGE: (1.0, 3.5),
+            MillingOrientation.FROM_BOARD_EDGE: (1.0625, 5.5),  # 5/4 S4S x 5-1/2", ripped
         },
         rabbet_depth_in=0.25,
         rabbet_height_in=0.375,
@@ -187,7 +187,7 @@ MOULDINGS: dict[int, Moulding] = {
         tooling_work=2,
         waste_factor=1.25,
         source_lumber_size={
-            MillingOrientation.FROM_BOARD_EDGE: (1.0, 3.5),
+            MillingOrientation.FROM_BOARD_EDGE: (1.0625, 5.5),  # 5/4 S4S x 5-1/2", ripped
         },
         rabbet_depth_in=0.25,
         rabbet_height_in=1.625,
@@ -201,7 +201,7 @@ MOULDINGS: dict[int, Moulding] = {
         tooling_work=3,
         waste_factor=1.25,
         source_lumber_size={
-            MillingOrientation.FROM_BOARD_EDGE: (1.0, 3.5),
+            MillingOrientation.FROM_BOARD_EDGE: (1.0625, 5.5),  # 5/4 S4S x 5-1/2", ripped
         },
         rabbet_depth_in=0.25,
         rabbet_height_in=0.375,
@@ -215,7 +215,7 @@ MOULDINGS: dict[int, Moulding] = {
         tooling_work=3,
         waste_factor=1.25,
         source_lumber_size={
-            MillingOrientation.FROM_BOARD_EDGE: (1.0, 3.5),
+            MillingOrientation.FROM_BOARD_EDGE: (1.0625, 5.5),  # 5/4 S4S x 5-1/2", ripped
         },
         rabbet_depth_in=0.25,
         rabbet_height_in=1.625,
@@ -229,7 +229,8 @@ MOULDINGS: dict[int, Moulding] = {
         tooling_work=3,
         waste_factor=1.25,
         source_lumber_size={
-            MillingOrientation.FROM_BOARD_EDGE: (1.25, 3.5),
+            # rotated: the 1" height comes from the board thickness, the 1.25" face from its width
+            MillingOrientation.FROM_BOARD_FACE: (1.0625, 5.5),  # 5/4 S4S x 5-1/2"
         },
         rabbet_depth_in=0.25,
         rabbet_height_in=0.5,

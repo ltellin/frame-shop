@@ -104,6 +104,38 @@ is deferred (shared with `Material` / `DesignMoulding`).
 
 ---
 
+# Planned direction: a shop-managed stock table (not implemented)
+
+Recorded 2026-10-17 as the owner's intended design, for planning only — no code
+yet, and the details below are not decided.
+
+- **Seed once, then the shop owns it.** The table is initially populated from
+  the lumber yard's price sheet; after that the software's user maintains it
+  like any other pricing information — add, rename, reprice, remove — without
+  editing code.
+- **Named stock profiles.** Each stock lumber size (e.g. "5/4 x 5-1/2") gets a
+  **name or ID** and a **price** (the owner said "price per foot"; today's model
+  is price per *board* foot — the unit is to be settled).
+- **Mouldings point at a profile.** A Moulding's `source_lumber_size` would
+  reference a stock profile by name/ID instead of naming a raw (thickness,
+  width) pair that must happen to match a row in a data file.
+
+**Why:** today the link between a Moulding and its lumber price is an exact
+numeric match against a Python data module. In v0.2.0, nine mouldings named
+sizes the yard doesn't sell (0.5" and 1.0" thick, 1.25" x 3.5") and so were
+unpriceable until the data was corrected by hand (v0.2.1). A named, editable
+profile makes that link explicit and puts it where a shop would maintain it.
+
+**Open details:** how species fit (one profile x species price grid, or a
+profile per species); board foot vs linear foot; whether a Moulding keeps one
+pointer per milling orientation; effective dates / snapshots (see Historical /
+Snapshot Concerns above); what happens when a Moulding points at a profile
+that was removed; where it is stored (see Open Questions 46 and 47).
+
+Until then, the hand-edited `shop_pricing_data.py` stays the source of truth.
+
+---
+
 # Open Questions
 
 Mirrored in [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md). Unit, keying,

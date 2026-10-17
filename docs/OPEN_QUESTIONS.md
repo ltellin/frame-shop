@@ -219,6 +219,11 @@ Still open:
     history** so price / availability changes never alter past orders?
 46. How is catalog and lumber-price data loaded and updated (hand-edited file,
     spreadsheet import, vendor feed)?
+    *Owner's stated direction (2026-10-17, not yet built):* seed a table of
+    named **stock lumber profiles** from the yard's price sheet, then let the
+    shop manage it like pricing data; each Moulding's `source_lumber_size`
+    points at a profile by name/ID. Details still open — see
+    [`domain/lumber.md`](domain/lumber.md), "Planned direction".
 
 ## Cross-cutting / architecture
 
