@@ -4,6 +4,19 @@ All notable changes to `frameshop-pricing` are recorded here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions
 follow [semver](https://semver.org/).
 
+## 0.2.1 — 2026-10-17
+
+Data fix: nine catalog mouldings could not be priced because their
+`source_lumber_size` named stock the lumber yard doesn't sell (0.5" and 1.0"
+thick, 1.25" x 3.5") and so had no row in `LUMBER_PRICES`.
+
+- 1001, 1002: now milled from 4/4 S4S x 3-1/2" (0.75, 3.5).
+- 3001-3006: now milled from 5/4 S4S x 5-1/2" (1.0625, 5.5), ripped.
+- 4001: now milled `from_board_face` from 5/4 S4S x 5-1/2" (1.0625, 5.5).
+- Known gap: ash has no 5/4 x 5-1/2" row, so 3001-3006 and 4001 are still
+  unpriceable in ash until that row is added.
+- New test: every catalog moulding has a cherry lumber price.
+
 ## 0.2.0 — 2026-10-11
 
 Adds **Length / Chop / Join** wholesale order-form pricing — the standard
