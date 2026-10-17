@@ -1,7 +1,7 @@
 """Moulding-line pricing engine.
 
 Mirrors docs/domain/pricing.md step for step — read that file for the
-reasoning behind each function, and docs/decisions/0002-0009 for what's
+reasoning behind each function, and docs/decisions/0002-0010 for what's
 settled vs still open (docs/OPEN_QUESTIONS.md).
 """
 
@@ -12,11 +12,12 @@ from .models import MouldingLineInput, OrderForm
 from .pricing_context import PricingContext
 
 
-def required_stock_dims_in(line: MouldingLineInput) -> tuple[float, float]:
-    """(thickness_in, width_in) of the board this line's Moulding is milled
-    from, for this line's milling orientation. Not computed — an explicit
-    fact on the Moulding (source_lumber_size) — see ADR 0007."""
-    return line.moulding.source_lumber_size[line.milling_orientation]
+def required_stock_size_id(line: MouldingLineInput, pricing_context: PricingContext) -> str:
+    """Which stock_size_id this line's Moulding is milled from, for this
+    line's milling orientation. Not computed from geometry — an explicit,
+    hand-editable fact (PricingContext.moulding_lumber_sources) — see
+    docs/decisions/0007-*.md and 0010-*.md."""
+    return pricing_context.stock_size_for(line.moulding.id, line.milling_orientation)
 
 
 def blank_board_feet_per_foot(line: MouldingLineInput) -> float:
@@ -27,8 +28,8 @@ def blank_board_feet_per_foot(line: MouldingLineInput) -> float:
 
 
 def bare_material_price_per_foot(line: MouldingLineInput, pricing_context: PricingContext) -> float:
-    thickness_in, width_in = required_stock_dims_in(line)
-    price_per_bf = pricing_context.lumber_price_per_bf(line.material, thickness_in, width_in)
+    stock_size_id = required_stock_size_id(line, pricing_context)
+    price_per_bf = pricing_context.lumber_price_per_bf(line.material, stock_size_id)
     raw = blank_board_feet_per_foot(line) * price_per_bf
     return raw * line.moulding.waste_factor  # milling waste + multi-stick board yield, folded in here
 

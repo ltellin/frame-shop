@@ -4,6 +4,29 @@ All notable changes to `frameshop-pricing` are recorded here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions
 follow [semver](https://semver.org/).
 
+## 0.3.0 — 2026-10-17
+
+Moulding lumber sourcing moves off the `Moulding` object entirely, into three
+normalized, hand-editable CSV tables — see
+`docs/decisions/0010-moulding-lumber-sources-as-tables.md`.
+
+- New `data/stock_sizes.csv` (species-agnostic `stock_size_id` → dimensions),
+  `data/lumber_prices.csv` (`species, stock_size_id` → $/bf, replacing the
+  old `(species, thickness, width)`-keyed dict), and
+  `data/moulding_lumber_sources.csv` (`moulding_id, milling_orientation` →
+  `stock_size_id`, replacing `Moulding.source_lumber_size`).
+- **Breaking:** `Moulding.source_lumber_size` removed. `Moulding` gains a
+  required `id: int` field (first positional field) — the catalog validates
+  at import time that each entry's `id` matches its dict key.
+- **Breaking:** `PricingContext.lumber_price_per_bf(species, stock_size_id)`
+  — signature changed from `(species, thickness_in, width_in)`.
+- **Breaking:** `engine.required_stock_dims_in(line)` replaced by
+  `engine.required_stock_size_id(line, pricing_context)`.
+- New `PricingContext.stock_size_for(moulding_id, orientation)`.
+- Fixed a real data bug surfaced while migrating the price data: the "3x3"
+  and "4x4" square turning-stock rows were filed under the surrounding
+  tier's thickness instead of their actual square dimension.
+
 ## 0.2.1 — 2026-10-17
 
 Data fix: nine catalog mouldings could not be priced because their

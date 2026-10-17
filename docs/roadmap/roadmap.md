@@ -51,20 +51,26 @@ stages are not collapsed.
   override. Still open: how the STANDARD/FLOAT split is represented in storage.
   **Implemented** (the pricing-relevant parts) — see `backend/frameshop_pricing/`.
 - Phase 2 (Material / Lumber / bare material cost): **settled** (first pass) —
-  8-species Material list, a lumber-price table keyed by species × thickness ×
-  width (price per board foot), and the derived bare-moulding price-per-foot
-  chain with a 4 ft shop-default minimum footage — see
+  8-species Material list, a lumber-price table (price per board foot), and
+  the derived bare-moulding price-per-foot chain with a 4 ft shop-default
+  minimum footage — see
   `docs/decisions/0002-material-and-bare-moulding-material-cost.md`. The
   milling-geometry follow-ups are also **settled** — the fixed
   `from_board_edge` / `from_board_face` milling convention (a **DesignMoulding**
   field, not Moulding), no glue-ups, no grade — see
   `docs/decisions/0003-milling-orientation-and-lumber-table-keying.md`. The
   earlier "round up to nearest stocked step" mechanism was superseded by an
-  explicit, per-Moulding `source_lumber_size` (per milling orientation) — see
-  `docs/decisions/0007-source-lumber-size.md`, which also resolves the
-  "stocked board widths" question. Only exact per-Moulding waste-factor values
-  remain loose. **Implemented**, including real lumber-yard price data — see
-  `backend/frameshop_pricing/data/shop_pricing_data.py`.
+  explicit per-Moulding, per-orientation lumber source (`docs/decisions/0007-
+  source-lumber-size.md`), which also resolves the "stocked board widths"
+  question. **Revised 2026-10-17**: that lumber source moved off the
+  `Moulding` object entirely, into three normalized, hand-editable tables
+  (named stock sizes, per-species prices, moulding-to-stock-size) to remove a
+  raw-dimension duplication risk between tables — see `docs/decisions/0010-
+  moulding-lumber-sources-as-tables.md`. Only exact per-Moulding waste-factor
+  values remain loose. **Implemented**, including real lumber-yard price data
+  — see `backend/frameshop_pricing/data/` (`shop_pricing_data.py` for
+  Finish/Extra/joinery rates; `stock_sizes.csv`, `lumber_prices.csv`,
+  `moulding_lumber_sources.csv` for lumber sourcing).
 - Phase 3 (Finish / Extra): **settled** (first pass) — Finish as a small
   controlled list of strings, no face-width scaling; Extra priced by its own
   method (`per_length` | `flat`); both stored as hardcoded reference data
@@ -121,8 +127,13 @@ stages are not collapsed.
 - Phase 7 (Artwork): started, paused mid-SPECIFY for the Phase 1–6
   implementation push. Not finalized.
 - Phases 8+: not started.
-- Planned, unscheduled (Phase 15 territory): a **shop-managed lumber stock
-  table** — named stock profiles seeded from the yard's price sheet, editable
-  by the shop, with each Moulding pointing at a profile instead of a raw
-  (thickness, width). Direction recorded in `docs/domain/lumber.md`; not
-  started, and not authorized to start.
+- **2026-10-17 — second deliberate sequence deviation.** The owner asked to
+  pull a **shop-managed lumber stock table** out of its originally-planned
+  Phase 15 slot and implement it immediately — named stock profiles seeded
+  from the yard's price sheet, editable by the shop, with each Moulding
+  pointing at a profile instead of embedding a raw (thickness, width) pair —
+  same pattern as the 2026-09-17 deviation that implemented Phases 1–6 early.
+  **Implemented** as three CSVs; see `docs/decisions/0010-moulding-lumber-
+  sources-as-tables.md` and the Phase 2 status note above. The rest of Phase
+  15 (broader catalog / vendor / inventory / operations) remains unscheduled
+  and not authorized to start.

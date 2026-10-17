@@ -88,20 +88,23 @@ here.
   minimum footage for this profile. Usually unset; some profiles warrant a higher
   minimum. See [`design-moulding.md`](design-moulding.md) and
   [`pricing.md`](pricing.md) for how the minimum is applied.
-- **`source_lumber_size`** — **settled** (supersedes the earlier "round up to
-  the nearest stocked step" mechanism). An explicit, shop-set `(thickness,
-  width)` pair naming the exact board size used to mill this profile, **one
-  entry per milling orientation it's actually milled in — at least one
-  orientation is required, but neither is privileged over the other**. A
-  profile that's only ever milled `from_board_face` (e.g. wide and shallow)
-  needs no `from_board_edge` entry at all; most profiles only need the common
-  `from_board_edge` one. Not computed from geometry — a shop may
-  deliberately use a bigger board than the geometry strictly requires (e.g. a
-  3/4"-wide square from 3/4" dressed lumber in one case, but from 1"-wide stock
-  for a different 3/4"-wide profile). Editable directly per Moulding. Species
-  is *not* part of this — that still comes from Material; `source_lumber_size`
-  + Material's species together select the row in
-  [`lumber.md`](lumber.md).
+- **`id`** — a stable integer identity, assigned by the shop catalog. Exists
+  specifically so an external, hand-editable table (see below) can reference
+  a Moulding without duplicating or embedding any of its other fields.
+
+### Not on Moulding (moved out — ADR 0010)
+
+- **Which lumber stock this profile is milled from** — originally a
+  `source_lumber_size` field directly on Moulding (ADR 0007), naming a
+  `(thickness, width)` pair per milling orientation. **Superseded**: this is
+  now a separate, hand-editable table,
+  `PricingContext.moulding_lumber_sources` (keyed by `(moulding.id,
+  milling_orientation) → stock_size_id`), not a Moulding fact at all — see
+  [`lumber.md`](lumber.md) and
+  [`../decisions/0010-moulding-lumber-sources-as-tables.md`](../decisions/0010-moulding-lumber-sources-as-tables.md).
+  The reasoning that originally motivated putting it on the Moulding record
+  (not computed from geometry; a shop may deliberately over-spec a board;
+  species-independent) still holds — only *where* the fact lives changed.
 
 ### STANDARD only
 
@@ -195,7 +198,9 @@ milled either way for different Designs:
 
 Same lumber lookup shape either way — see [`pricing.md`](pricing.md). Which
 *specific* board size (thickness × width) is used for each orientation is not
-computed from this convention — it's the explicit `source_lumber_size` above.
+computed from this convention — it's an explicit, per-Moulding fact, now held
+in `PricingContext.moulding_lumber_sources` rather than on the Moulding
+itself (see "Not on Moulding" above).
 
 ---
 
@@ -224,12 +229,13 @@ an open question.
 
 # Derived Values
 
-- **which lumber row to read** — `source_lumber_size[design_moulding.milling_orientation]`
-  gives the (thickness, width); combined with Material's species, this
-  selects the row in [`lumber.md`](lumber.md) the pricing chain reads. A direct
-  lookup, not computed from `face width × overall height` (that bounding box is
-  still used for the blank-volume calculation, just not for picking the stock
-  size — see [`pricing.md`](pricing.md)).
+- **which lumber row to read** — `pricing_context.stock_size_for(moulding.id,
+  design_moulding.milling_orientation)` gives a `stock_size_id`; combined
+  with Material's species, this selects the row in [`lumber.md`](lumber.md)
+  the pricing chain reads. A direct lookup against a hand-editable table, not
+  computed from `face width × overall height` (that bounding box is still
+  used for the blank-volume calculation, just not for picking the stock size
+  — see [`pricing.md`](pricing.md)).
 - **linear footage** required for a frame — a function of the finished size and
   the profile's face width. (A cutting allowance for mitres is deferred.)
 - **finished / outer size** of a framed piece — the package (STANDARD) or
@@ -255,14 +261,18 @@ current lumber prices.
   fields are required depends on the type.
 - `tooling work` ∈ {1, 2, 3, 5, 8}.
 - `waste factor` ≥ 1.0.
-- A Moulding has a `source_lumber_size` entry for **at least one** milling
-  orientation — whichever one(s) it's actually ever milled in; neither
-  orientation is required by default. Pricing a DesignMoulding in an
-  orientation the Moulding has no `source_lumber_size` for is an error
-  condition.
+- `id` is unique across the catalog and is the key `moulding_lumber_sources`
+  (see [`lumber.md`](lumber.md)) joins against — not a Moulding-level
+  invariant to check here, but a catalog-level one (enforced at import time
+  in `data/moulding_catalog.py`).
+- A Moulding should have a `moulding_lumber_sources` row for **at least one**
+  milling orientation — whichever one(s) it's actually ever milled in;
+  neither orientation is required by default. This is now a property of that
+  external table, not something `Moulding.__post_init__` validates. Pricing a
+  DesignMoulding in an orientation with no such row is an error condition.
 - A Moulding carries **no** material, finish, embellishment, joinery method,
-  milling orientation, stock, or price — only geometry and the pricing-input
-  facts (tooling work, waste factor, `source_lumber_size`, optional
+  milling orientation, stock, or price — only geometry, identity (`id`), and
+  the pricing-input facts (tooling work, waste factor, optional
   minimum-footage override).
 - House-milled and (eventually) bought-in mouldings are represented uniformly
   enough that a DesignMoulding doesn't care which it is — mechanism TBD.
@@ -273,10 +283,11 @@ current lumber prices.
 
 When a Design that uses a moulding is accepted, the system must eventually be
 able to reproduce the exact geometry, tooling work, waste factor, the
-`source_lumber_size` used, the DesignMoulding's milling orientation, and the
-lumber price used, as of acceptance. Later edits to the Moulding record (a
-changed `source_lumber_size`, say) or to lumber prices must not reach backward.
-Snapshot mechanism is **not being designed now**.
+`stock_size_id` the Moulding resolved to for that orientation, the
+DesignMoulding's milling orientation, and the lumber price used, as of
+acceptance. Later edits to the `moulding_lumber_sources` table (pointing a
+Moulding at a different stock size) or to lumber prices must not reach
+backward. Snapshot mechanism is **not being designed now**.
 
 ---
 
@@ -287,13 +298,14 @@ recorded in [`../decisions/0001-moulding-geometry-and-tooling-work.md`](../decis
 The milling convention, waste factor representation, and the lumber-table shape
 are also settled (first pass) — recorded in
 [`../decisions/0003-milling-orientation-and-lumber-table-keying.md`](../decisions/0003-milling-orientation-and-lumber-table-keying.md).
-**`source_lumber_size`** — an explicit, per-Moulding, per-orientation board
-size, replacing the earlier "round up to nearest stocked step" mechanism — is
-recorded in
-[`../decisions/0007-source-lumber-size.md`](../decisions/0007-source-lumber-size.md)
-and **resolves the "stocked board widths" question below** (there's no longer a
-generic stocked-widths list to define; each Moulding just names its own board
-size).
+**Which lumber stock a Moulding is milled from**, per orientation — originally
+an explicit per-Moulding field (`source_lumber_size`,
+[`../decisions/0007-source-lumber-size.md`](../decisions/0007-source-lumber-size.md)),
+now a separate hand-editable table instead
+([`../decisions/0010-moulding-lumber-sources-as-tables.md`](../decisions/0010-moulding-lumber-sources-as-tables.md)) —
+**resolves the "stocked board widths" question below** either way (there's no
+longer a generic stocked-widths list to define; each Moulding is pointed at
+its own board size).
 Still open, mirrored in [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md):
 
 1. Should the STANDARD/FLOAT geometry difference be nullable fields, subtype

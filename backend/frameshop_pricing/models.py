@@ -42,23 +42,35 @@ class OrderForm(str, Enum):
 
 
 @dataclass(frozen=True)
+class StockSize:
+    """A named lumber stock dimension — e.g. "4/4 x 3-1/2"". Species-agnostic
+    (a board size is a board size regardless of what it's milled from); what
+    varies by species is only whether/what it's priced at, in
+    PricingContext.lumber_prices. See docs/decisions/0010-*.md."""
+
+    nominal_thickness: str  # e.g. "4/4", "5/4", "6/4", "8/4", or "square"
+    thickness_in: float
+    width_in: float
+
+
+@dataclass(frozen=True)
 class Moulding:
     """A geometry / fabrication specification. See docs/domain/moulding.md.
 
     Carries no material, finish, embellishment, joinery, or price — only
     geometry and the pricing-input facts (tooling_work, waste_factor,
-    source_lumber_size, optional minimum_footage_override).
+    optional minimum_footage_override). Which lumber stock it's milled from
+    is a separate, hand-editable table — see
+    PricingContext.moulding_lumber_sources — not a field here.
     """
 
+    id: int
     name: str
     type: MouldingType
     face_width_in: float
     overall_height_in: float
     tooling_work: int  # one of 1, 2, 3, 5, 8
     waste_factor: float  # multiplier, >= 1.0
-    # milling orientation -> (thickness_in, width_in) of the board it's milled from.
-    # Explicit and shop-set, not computed from geometry — see ADR 0007.
-    source_lumber_size: dict[MillingOrientation, tuple[float, float]]
     minimum_footage_override: float | None = None
 
     # STANDARD only
@@ -79,8 +91,6 @@ class Moulding:
             raise ValueError(f"tooling_work must be one of 1/2/3/5/8, got {self.tooling_work!r}")
         if self.waste_factor < 1.0:
             raise ValueError(f"waste_factor must be >= 1.0, got {self.waste_factor!r}")
-        if not self.source_lumber_size:
-            raise ValueError("source_lumber_size must define at least one milling orientation")
 
 
 @dataclass(frozen=True)

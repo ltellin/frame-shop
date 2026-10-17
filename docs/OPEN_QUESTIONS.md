@@ -218,12 +218,17 @@ Still open:
 45. How is **catalog / lumber reference data** kept separate from **transaction
     history** so price / availability changes never alter past orders?
 46. How is catalog and lumber-price data loaded and updated (hand-edited file,
-    spreadsheet import, vendor feed)?
-    *Owner's stated direction (2026-10-17, not yet built):* seed a table of
-    named **stock lumber profiles** from the yard's price sheet, then let the
-    shop manage it like pricing data; each Moulding's `source_lumber_size`
-    points at a profile by name/ID. Details still open — see
-    [`domain/lumber.md`](domain/lumber.md), "Planned direction".
+    spreadsheet import, vendor feed)? For the lumber-sourcing piece
+    specifically: **implemented** 2026-10-17 as three hand-editable CSVs (a
+    named, species-agnostic stock-size reference table, a per-species price
+    table, and a moulding-to-stock-size table) — see
+    [`decisions/0010-moulding-lumber-sources-as-tables.md`](decisions/0010-moulding-lumber-sources-as-tables.md)
+    and [`domain/lumber.md`](domain/lumber.md). Still open from that work:
+    what happens when a Moulding points at a `stock_size_id` that's since
+    been removed (currently just a `KeyError` at pricing time, not
+    defensively handled). The broader question — spreadsheet import vs.
+    vendor feed vs. always hand-edited — remains open for catalog data
+    generally, beyond this one table.
 
 ## Cross-cutting / architecture
 

@@ -1,7 +1,7 @@
 """Moulding pricing engine.
 
 Implements docs/domain/{moulding,material,lumber,finish,extra,offering,
-design-moulding,pricing}.md and the decisions in docs/decisions/0002-0009.
+design-moulding,pricing}.md and the decisions in docs/decisions/0002-0010.
 
 This package is deliberately decoupled from Design/DesignMoulding, which
 aren't specified yet — see MouldingLineInput in models.py. A future Design
@@ -23,6 +23,7 @@ from .models import (
     MouldingType,
     Offering,
     OrderForm,
+    StockSize,
 )
 from .pricing_context import PricingContext
 
@@ -38,6 +39,7 @@ __all__ = [
     "Offering",
     "OrderForm",
     "PricingContext",
+    "StockSize",
     "get_moulding",
     "price_moulding_line",
     "price_total",

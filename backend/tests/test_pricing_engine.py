@@ -24,6 +24,7 @@ from frameshop_pricing.models import (
     MouldingType,
     Offering,
     OrderForm,
+    StockSize,
 )
 from frameshop_pricing.pricing_context import PricingContext
 
@@ -31,9 +32,17 @@ from frameshop_pricing.pricing_context import PricingContext
 @pytest.fixture
 def pricing_context():
     return PricingContext(
+        stock_sizes={
+            "4_4x3.5": StockSize("4/4", 0.75, 3.5),
+            "test_face": StockSize("test", 1.5, 2.0),
+        },
         lumber_prices={
-            ("maple", 0.75, 3.5): 6.0,
-            ("maple", 1.5, 2.0): 9.0,
+            ("maple", "4_4x3.5"): 6.0,
+            ("maple", "test_face"): 9.0,
+        },
+        moulding_lumber_sources={
+            (1, MillingOrientation.FROM_BOARD_EDGE): "4_4x3.5",
+            (1, MillingOrientation.FROM_BOARD_FACE): "test_face",
         },
         finish_rates={
             "oil": FinishRate(base_rate_per_ft=1.0, marginal_rate_per_ft=0.5),
@@ -55,16 +64,13 @@ def pricing_context():
 @pytest.fixture
 def square_moulding():
     return Moulding(
+        id=1,
         name="3/4 square",
         type=MouldingType.STANDARD,
         face_width_in=0.75,
         overall_height_in=0.75,
         tooling_work=1,
         waste_factor=1.1,
-        source_lumber_size={
-            MillingOrientation.FROM_BOARD_EDGE: (0.75, 3.5),
-            MillingOrientation.FROM_BOARD_FACE: (1.5, 2.0),
-        },
         rabbet_depth_in=0.25,
         rabbet_height_in=0.375,
     )
@@ -269,22 +275,10 @@ def test_moulding_rejects_invalid_pricing_inputs(square_moulding, field, value):
         dataclasses.replace(square_moulding, **{field: value})
 
 
-def test_moulding_allows_a_face_only_source_lumber_size(square_moulding):
-    # a profile that's only ever milled from_board_face (e.g. wide, shallow) is valid
-    import dataclasses
-
-    face_only = dataclasses.replace(
-        square_moulding,
-        source_lumber_size={MillingOrientation.FROM_BOARD_FACE: (1.5, 2.0)},
-    )
-    assert face_only.source_lumber_size[MillingOrientation.FROM_BOARD_FACE] == (1.5, 2.0)
-
-
-def test_moulding_requires_at_least_one_source_lumber_size(square_moulding):
-    import dataclasses
-
-    with pytest.raises(ValueError):
-        dataclasses.replace(square_moulding, source_lumber_size={})
+def test_stock_size_for_raises_a_helpful_error_when_no_row_is_configured(pricing_context):
+    # no lumber source row exists for this moulding id in the fixture's pricing_context
+    with pytest.raises(KeyError, match="moulding_lumber_sources.csv"):
+        pricing_context.stock_size_for(999, MillingOrientation.FROM_BOARD_EDGE)
 
 
 # --- Length / Chop / Join (ADR 0009) ---------------------------------------

@@ -1,0 +1,134 @@
+species,stock_size_id,price_per_bf
+ash,4_4x3.5,4.20
+ash,4_4x5.5,6.20
+ash,4_4x7.25,8.20
+ash,SQ3x3,11.00
+ash,5_4x7.25,10.00
+ash,6_4x5.5,10.00
+ash,6_4x7.25,16.50
+ash,8_4x5.5,12.00
+ash,8_4x7.25,15.00
+ash,8_4x9.25,20.00
+cherry,4_4x3.5,4.45
+cherry,4_4x5.5,4.95
+cherry,4_4x7.25,7.70
+cherry,4_4x9.25,9.70
+cherry,4_4x11.25,12.70
+cherry,SQ3x3,13.00
+cherry,5_4x5.5,6.80
+cherry,5_4x7.25,9.20
+cherry,5_4x11.25,16.70
+cherry,6_4x5.5,8.00
+cherry,6_4x7.25,12.00
+cherry,6_4x9.25,14.00
+cherry,8_4x5.5,12.00
+cherry,8_4x7.25,16.00
+cherry,8_4x9.25,22.00
+cherry,SQ4x4,28.00
+maple,4_4x3.5,4.85
+maple,4_4x5.5,6.30
+maple,4_4x7.25,8.80
+maple,4_4x9.25,12.30
+maple,4_4x11.25,14.30
+maple,SQ3x3,14.00
+maple,5_4x5.5,9.20
+maple,5_4x7.25,12.20
+maple,5_4x9.25,16.20
+maple,5_4x11.25,22.20
+maple,6_4x5.5,9.50
+maple,6_4x7.25,14.00
+maple,6_4x9.25,17.00
+maple,8_4x5.5,15.50
+maple,8_4x7.25,24.00
+maple,8_4x9.25,34.50
+maple,SQ4x4,24.00
+poplar,4_4x1.5,2.20
+poplar,4_4x3.5,2.50
+poplar,4_4x5.5,3.55
+poplar,4_4x7.25,4.45
+poplar,4_4x9.25,5.70
+poplar,4_4x11.25,6.85
+poplar,SQ3x3,9.50
+poplar,5_4x3.5,4.00
+poplar,5_4x5.5,4.40
+poplar,5_4x7.25,5.80
+poplar,5_4x9.25,7.45
+poplar,5_4x11.25,8.85
+poplar,6_4x3.5,7.00
+poplar,6_4x5.5,7.40
+poplar,6_4x7.25,8.75
+poplar,6_4x9.25,10.00
+poplar,6_4x11.25,11.40
+poplar,8_4x3.5,5.80
+poplar,8_4x5.5,8.00
+poplar,8_4x7.25,9.80
+poplar,8_4x9.25,12.80
+poplar,8_4x11.25,14.50
+poplar,SQ4x4,15.00
+red oak,4_4x3.5,3.00
+red oak,4_4x5.5,3.95
+red oak,4_4x7.25,4.85
+red oak,4_4x9.25,6.50
+red oak,4_4x11.25,7.95
+red oak,SQ3x3,11.00
+red oak,5_4x5.5,6.20
+red oak,5_4x7.25,8.95
+red oak,5_4x11.25,14.20
+red oak,6_4x5.5,7.25
+red oak,6_4x7.25,10.00
+red oak,6_4x9.25,14.00
+red oak,8_4x5.5,10.00
+red oak,8_4x7.25,13.00
+red oak,8_4x9.25,16.50
+sapele,4_4x3.5,4.95
+sapele,4_4x5.5,7.15
+sapele,4_4x7.25,9.15
+sapele,4_4x9.25,13.20
+sapele,4_4x11.25,16.20
+sapele,SQ3x3,17.00
+sapele,5_4x3.5,6.20
+sapele,5_4x5.5,8.20
+sapele,5_4x7.25,11.20
+sapele,5_4x9.25,17.20
+sapele,5_4x11.25,19.20
+sapele,6_4x5.5,12.00
+sapele,6_4x7.25,14.00
+sapele,6_4x9.25,17.00
+sapele,6_4x11.25,20.00
+sapele,8_4x5.5,15.50
+sapele,8_4x7.25,18.00
+sapele,8_4x9.25,26.00
+sapele,8_4x11.25,33.00
+sapele,SQ4x4,26.00
+walnut,4_4x3.5,9.20
+walnut,4_4x5.5,12.70
+walnut,4_4x7.25,16.70
+walnut,4_4x9.25,23.80
+walnut,4_4x11.25,28.20
+walnut,SQ3x3,28.00
+walnut,5_4x5.5,17.70
+walnut,5_4x7.25,22.70
+walnut,5_4x11.25,29.20
+walnut,6_4x5.5,22.00
+walnut,6_4x7.25,32.00
+walnut,6_4x9.25,42.00
+walnut,8_4x5.5,27.00
+walnut,8_4x7.25,38.00
+walnut,8_4x9.25,48.00
+walnut,8_4x11.25,59.00
+white oak,4_4x3.5,6.20
+white oak,4_4x5.5,10.20
+white oak,4_4x7.25,15.20
+white oak,4_4x9.25,21.70
+white oak,4_4x11.25,29.70
+white oak,SQ3x3,28.00
+white oak,5_4x5.5,14.45
+white oak,5_4x7.25,26.20
+white oak,5_4x9.25,30.70
+white oak,5_4x11.25,39.20
+white oak,6_4x5.5,18.00
+white oak,6_4x7.25,27.00
+white oak,6_4x9.25,31.00
+white oak,8_4x5.5,28.00
+white oak,8_4x7.25,37.00
+white oak,8_4x9.25,44.00

@@ -28,7 +28,12 @@ price_moulding_line(design_moulding, design, pricing_context) -> PriceBreakdown
 object rather than a scattered handful of rate-table parameters. It bundles
 everything a shop can configure:
 
-- `lumber_prices` — lookup by (species, thickness, width) → $/board foot
+- `stock_sizes` — lookup by `stock_size_id` → (nominal thickness, thickness,
+  width); species-agnostic reference, see [`lumber.md`](lumber.md)
+- `lumber_prices` — lookup by (species, `stock_size_id`) → $/board foot
+- `moulding_lumber_sources` — lookup by (moulding id, milling orientation) →
+  `stock_size_id` — see
+  [`../decisions/0010-moulding-lumber-sources-as-tables.md`](../decisions/0010-moulding-lumber-sources-as-tables.md)
 - `finish_rates` — lookup by Finish name → $/ft
 - `extra_rates` — lookup by Extra name → `{method, rate}`
 - `joinery_rates` — lookup by joinery method → flat $ per frame
@@ -55,7 +60,7 @@ reached through `PricingContext` rather than passed individually.
 
 | From | Inputs |
 |---|---|
-| Moulding | geometry (face width, overall height); `tooling work` (1–8); `waste factor`; `source_lumber_size` (per orientation); optional `minimum footage` override |
+| Moulding | `id` (joins against `pricing_context.moulding_lumber_sources`); geometry (face width, overall height); `tooling work` (1–8); `waste factor`; optional `minimum footage` override |
 | DesignMoulding | `milling_orientation`; `non_offering_labor_charge` (optional override); `joinery_method`; `order_form` (`LENGTH` \| `CHOP` \| `JOIN`, default `JOIN`); `requested_footage_ft` (only for `LENGTH`) |
 | Material | species → the rows to read in `pricing_context.lumber_prices` |
 | Finish ([`finish.md`](finish.md)) | looked up in `pricing_context.finish_rates` |
@@ -87,17 +92,21 @@ board thickness, face width ↔ board width — rotated 90°). Which one applies
 **DesignMoulding** choice (`milling_orientation`), not a Moulding fact.
 
 **Settled**: the required board size is not computed/rounded from geometry at
-all — it's an explicit, shop-set fact on the Moulding itself,
-`source_lumber_size`, one entry per milling orientation the Moulding is
-actually milled in (see [`moulding.md`](moulding.md) and
-[`../decisions/0007-source-lumber-size.md`](../decisions/0007-source-lumber-size.md)).
-This also means there's no generic "stocked width steps" list to define — each
-Moulding just names its own board size:
+all — it's an explicit, shop-set fact, one entry per milling orientation the
+Moulding is actually milled in. **Revised (ADR 0010)**: that fact lives in a
+separate, hand-editable table (`pricing_context.moulding_lumber_sources`,
+keyed by `(moulding.id, orientation)`), not on the Moulding object itself —
+see [`moulding.md`](moulding.md),
+[`../decisions/0007-source-lumber-size.md`](../decisions/0007-source-lumber-size.md),
+and
+[`../decisions/0010-moulding-lumber-sources-as-tables.md`](../decisions/0010-moulding-lumber-sources-as-tables.md).
+This still means there's no generic "stocked width steps" list to define —
+each Moulding is pointed at its own named stock size:
 
 ```python
-def required_stock_dims_in(design_moulding):
+def required_stock_size_id(design_moulding, pricing_context):
     m = design_moulding.moulding
-    return m.source_lumber_size[design_moulding.milling_orientation]   # (thickness, width)
+    return pricing_context.stock_size_for(m.id, design_moulding.milling_orientation)
 
 
 def blank_board_feet_per_foot(moulding):
@@ -108,8 +117,8 @@ def blank_board_feet_per_foot(moulding):
 
 def bare_material_price_per_foot(design_moulding, pricing_context):
     m, material = design_moulding.moulding, design_moulding.material
-    thickness, width = required_stock_dims_in(design_moulding)
-    price_per_bf = pricing_context.lumber_prices.get(material.species, thickness, width)
+    stock_size_id = required_stock_size_id(design_moulding, pricing_context)
+    price_per_bf = pricing_context.lumber_price_per_bf(material.species, stock_size_id)
     raw = blank_board_feet_per_foot(m) * price_per_bf
     return raw * m.waste_factor   # milling waste + multi-stick board yield, both folded in here
 ```

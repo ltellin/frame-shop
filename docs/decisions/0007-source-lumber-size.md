@@ -79,3 +79,16 @@ combinations actual Mouldings reference.
   `source_lumber_size` for is an error condition (incomplete Moulding data),
   not a computation to fall back on.
 - No further domain open questions remain on stocked board sizes.
+
+## Correction (2026-10-17) — superseded by ADR 0010
+
+**`source_lumber_size` is no longer a field on `Moulding` at all.** The
+duplication risk between this table and the lumber price table (both keyed by
+raw `(thickness, width)`) led to pulling lumber sourcing out into its own
+hand-editable table (`moulding_lumber_sources.csv`), keyed by
+`(moulding_id, orientation)` and pointing at a shared `stock_sizes.csv`
+reference table by id rather than repeating raw dimensions. See
+[`0010-moulding-lumber-sources-as-tables.md`](0010-moulding-lumber-sources-as-tables.md).
+The per-orientation shape this ADR established (at least one orientation,
+neither privileged) carries over unchanged — it's just a property of the new
+table now, not a `Moulding`-level invariant.
