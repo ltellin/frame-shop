@@ -4,6 +4,19 @@ All notable changes to `frameshop-pricing` are recorded here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions
 follow [semver](https://semver.org/).
 
+## 0.3.1 — 2026-10-17
+
+Data fix: 3001-3006 and 4001 were unpriceable in ash (no `ash, 5_4x5.5` row
+in `lumber_prices.csv`). Ash isn't stocked at 5/4 x 5-1/2" at this shop, but
+5/4 x 7-1/4" is, and the wider board mills these profiles the same way (the
+pricing math is unaffected — it's still face_width x overall_height of
+blank, just sourced from a bigger board). Repointed
+`moulding_lumber_sources.csv` for all seven mouldings from `5_4x5.5` to
+`5_4x7.25`, for every species, not ash alone, since lumber source is
+deliberately species-independent (ADR 0007/0010) — all 8 species already
+have a `5_4x7.25` price row, so this closes the gap entirely rather than
+leaving the other species on a narrower board.
+
 ## 0.3.0 — 2026-10-17
 
 Moulding lumber sourcing moves off the `Moulding` object entirely, into three
