@@ -121,3 +121,8 @@ stages are not collapsed.
 - Phase 7 (Artwork): started, paused mid-SPECIFY for the Phase 1–6
   implementation push. Not finalized.
 - Phases 8+: not started.
+- Planned, unscheduled (Phase 15 territory): a **shop-managed lumber stock
+  table** — named stock profiles seeded from the yard's price sheet, editable
+  by the shop, with each Moulding pointing at a profile instead of a raw
+  (thickness, width). Direction recorded in `docs/domain/lumber.md`; not
+  started, and not authorized to start.
