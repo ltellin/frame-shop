@@ -1,6 +1,6 @@
 [project]
 name = "frameshop-pricing"
-version = "0.3.1"
+version = "0.3.2"
 description = "Moulding pricing engine for the frame-shop domain model"
 requires-python = ">=3.10"
 dependencies = []
@@ -14,6 +14,12 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["frameshop_pricing*"]
+
+[tool.setuptools.package-data]
+# setuptools only auto-bundles .py files; these CSVs are read at runtime by
+# PricingContext.load_default() and must be declared explicitly or they're
+# silently dropped from a real (non-editable) build — see CHANGELOG 0.3.2.
+frameshop_pricing = ["data/*.csv"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -4,6 +4,26 @@ All notable changes to `frameshop-pricing` are recorded here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions
 follow [semver](https://semver.org/).
 
+## 0.3.2 — 2026-10-18
+
+Packaging fix: the three lumber-sourcing CSVs added in 0.3.0
+(`stock_sizes.csv`, `lumber_prices.csv`, `moulding_lumber_sources.csv`) were
+silently missing from every real (non-editable) install — `setuptools`
+only auto-bundles `.py` files, and nothing declared the CSVs as package
+data. `pip install -e` (editable, used throughout local dev) never hit
+this, since it just points back at the live source tree; a real `pip
+install` from a built wheel or a git-tag dependency did, raising a bare
+`FileNotFoundError` from `PricingContext.load_default()` with no context —
+this is how the bug reached a deployed site (`my_photo_site`'s Vercel
+function, which installs the real wheel) while every local check up to
+this point passed.
+
+- Added `[tool.setuptools.package-data]` declaring `frameshop_pricing =
+  ["data/*.csv"]`.
+- Verified by building an actual wheel and installing it (not editable)
+  into a clean venv — confirmed `FileNotFoundError` before the fix,
+  confirmed correct pricing after.
+
 ## 0.3.1 — 2026-10-17
 
 Data fix: 3001-3006 and 4001 were unpriceable in ash (no `ash, 5_4x5.5` row
