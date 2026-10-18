@@ -19,6 +19,7 @@ Records so far:
 - [`0008-finish-two-rate-pricing.md`](0008-finish-two-rate-pricing.md)
 - [`0009-length-chop-join-order-form.md`](0009-length-chop-join-order-form.md)
 - [`0010-moulding-lumber-sources-as-tables.md`](0010-moulding-lumber-sources-as-tables.md)
+- [`0011-extra-rate-combines-flat-and-per-length.md`](0011-extra-rate-combines-flat-and-per-length.md)
 
 ## When to add a record
 

@@ -67,3 +67,13 @@ decision, not made now.
   footage; Moulding/Extra compatibility constraints; whether some Extras should
   force custom (non-Offering-standard) pricing. See
   [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md).
+
+## Correction (2026-10-18) — superseded by ADR 0011
+
+**Extra pricing is no longer a `method` choice between `per_length` and
+`flat`.** `ExtraRate` now has two independent charge fields
+(`flat_charge`, `per_length_charge`, both defaulting to 0) so one Extra can
+use either or both at once — see
+[`0011-extra-rate-combines-flat-and-per-length.md`](0011-extra-rate-combines-flat-and-per-length.md).
+The Length/Chop/Join scoping of each component (per-length at every tier,
+flat at `JOIN` only — ADR 0009) is unchanged.

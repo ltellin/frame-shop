@@ -63,9 +63,12 @@ No Finish-specific open questions remain.
 
 ## Extra
 
-Pricing method (`per_length` | `flat`) and the hardcoded-rate storage are
+Pricing as two independent components (`flat_charge`, `per_length_charge` —
+not a mutually-exclusive method) and the hardcoded-rate storage are
 **settled** — see
-[`decisions/0004-finish-and-extra-pricing.md`](decisions/0004-finish-and-extra-pricing.md).
+[`decisions/0004-finish-and-extra-pricing.md`](decisions/0004-finish-and-extra-pricing.md)
+and
+[`decisions/0011-extra-rate-combines-flat-and-per-length.md`](decisions/0011-extra-rate-combines-flat-and-per-length.md).
 Whether an Extra breaks Offering-price eligibility is also **settled**: any
 Extra difference from the source Offering's recipe does, uniformly — see
 [`decisions/0005-offering-pricing-and-non-offering-labor-charge.md`](decisions/0005-offering-pricing-and-non-offering-labor-charge.md).
@@ -75,7 +78,7 @@ Still open:
 7. **Moulding/Extra compatibility** — some mouldings will constrain which
    Extras fit them (e.g. profile too narrow for a given inlay). Real, but
    explicitly deferred — needs a mechanism later.
-8. Should **Extras' `per_length` pricing** get the same two-rate treatment
+8. Should **an Extra's `per_length_charge`** get the same two-rate treatment
    (base rate to the minimum footage, lower marginal rate beyond) that Finish
    got in
    [`decisions/0008-finish-two-rate-pricing.md`](decisions/0008-finish-two-rate-pricing.md)

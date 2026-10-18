@@ -103,8 +103,14 @@ class Extra:
 
 @dataclass(frozen=True)
 class ExtraRate:
-    method: str  # "per_length" | "flat"
-    value: float
+    """An Extra's rate, as however many of its two components apply.
+    `flat_charge` is added once per frame; `per_length_charge` is added per
+    billable foot. Either may be 0 — a given Extra need not use both — but
+    both can be set at once (e.g. a hardware kit with a flat fee plus a
+    per-foot inlay running alongside it). See docs/decisions/0011-*.md."""
+
+    flat_charge: float = 0.0
+    per_length_charge: float = 0.0
 
 
 @dataclass(frozen=True)

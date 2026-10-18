@@ -174,9 +174,8 @@ def finish_cost(design_moulding, billable_ft, pricing_context):
 def per_length_extras_cost(design_moulding, billable_ft, pricing_context):
     total = 0
     for extra in design_moulding.extras:
-        rate = pricing_context.extra_rates.get(extra.name)   # e.g. "inlay" -> {method, rate}
-        if rate.method == "per_length":
-            total += rate.value * billable_ft
+        rate = pricing_context.extra_rates.get(extra.name)   # e.g. "inlay" -> {flat_charge, per_length_charge}
+        total += rate.per_length_charge * billable_ft
     return total
 
 
@@ -184,22 +183,25 @@ def flat_extras_cost(design_moulding, pricing_context):
     total = 0
     for extra in design_moulding.extras:
         rate = pricing_context.extra_rates.get(extra.name)
-        if rate.method == "flat":
-            total += rate.value
+        total += rate.flat_charge
     return total
 ```
 
-**Settled (ADR 0009): split by pricing method, not just by value, because they
-apply at different Length/Chop/Join tiers** — `per_length` Extras apply at
-*every* order form (a continuous inlay runs along the stick whether it's cut
-or not); `flat` Extras apply at `JOIN` only (they typically describe something
-about the finished, assembled piece — see "Length / Chop / Join" below).
+**Settled (ADR 0009, revised ADR 0011): split by pricing component, not by a
+mutually-exclusive method, because the two components apply at different
+Length/Chop/Join tiers** — `per_length_charge` applies at *every* order form
+(a continuous inlay runs along the stick whether it's cut or not);
+`flat_charge` applies at `JOIN` only (it typically describes something about
+the finished, assembled piece — see "Length / Chop / Join" below). An Extra
+can set either component, or both at once — see
+[`../decisions/0011-extra-rate-combines-flat-and-per-length.md`](../decisions/0011-extra-rate-combines-flat-and-per-length.md).
 `per_length_extras_cost` uses the **same `billable_ft`** computed for the bare
 material cost — a working assumption (a shop typically finishes/inlays the
 whole stick before chopping and joining it), not a confirmed decision; see
-Open Questions. Whether `per_length` Extras should get the same two-rate
-treatment as Finish (a base rate covering setup, a lower marginal rate beyond)
-is a separate open question — not applied to Extras yet, only to Finish.
+Open Questions. Whether the per-length component should get the same
+two-rate treatment as Finish (a base rate covering setup, a lower marginal
+rate beyond) is a separate open question — not applied to Extras yet, only
+to Finish.
 
 Moulding/Extra **compatibility constraints** are real but **not modelled here**
 — deliberately deferred, noted in [`extra.md`](extra.md).
@@ -392,8 +394,9 @@ Recorded in
 - No glue-ups and no grade modelling — settled, not formula concerns.
 - Finish never depends on face width, but is **not flat per foot** — a
   two-rate model (base rate to the minimum footage, lower marginal rate
-  beyond); Extras are either per-length (flat rate, same footage as
-  material/finish) or flat regardless of size.
+  beyond); an Extra's per-length charge (same footage as material/finish)
+  and flat charge are independent components an Extra may use either or
+  both of (ADR 0011).
 - Offering pricing is **exact-match only** — no partial credit.
 - The custom path always adds `non_offering_labor_charge`; tooling-work labor
   and joinery follow their own, different rules (see above) — the three are not
@@ -404,8 +407,9 @@ Recorded in
   custom path.**
 - **`order_form` defaults to `JOIN`** so existing shop-mode behavior is
   unchanged. Offering pricing and `non_offering_labor_charge` are scoped to
-  `JOIN` only; `chop_charge` applies to `CHOP` and `JOIN`; `flat` Extras apply
-  to `JOIN` only; `per_length` Extras, Finish, and tooling-work labor apply to
+  `JOIN` only; `chop_charge` applies to `CHOP` and `JOIN`; an Extra's flat
+  charge applies to `JOIN` only; its per-length charge, Finish, and
+  tooling-work labor apply to
   all three.
 - **Quantity lives on Design and multiplies the Design's total**, not any one
   DesignMoulding's price.

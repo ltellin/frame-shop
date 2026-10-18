@@ -26,11 +26,13 @@ FINISH_RATES: dict[str, FinishRate] = {
     "stained": FinishRate(base_rate_per_ft=2.00, marginal_rate_per_ft=1.00),
 }
 
-# Extra name -> pricing method + rate.
+# Extra name -> rate. flat_charge is added once per frame (JOIN only);
+# per_length_charge is added per billable foot (every order form). An Extra
+# can set either, or both at once — see docs/decisions/0011-*.md.
 # EXAMPLE VALUES.
 EXTRA_RATES: dict[str, ExtraRate] = {
-    "inlay": ExtraRate(method="per_length", value=4.00),
-    "matching spacer": ExtraRate(method="per_length", value=3.00),
+    "inlay": ExtraRate(flat_charge=50.00, per_length_charge=4.00),
+    "matching spacer": ExtraRate(flat_charge=45.00, per_length_charge=2.00),
 }
 
 # Joinery method -> flat $ per frame (not per corner, not per foot).

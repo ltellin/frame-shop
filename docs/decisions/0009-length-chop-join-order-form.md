@@ -85,3 +85,11 @@ JOIN total   = matches_source_offering (JOIN only)
   typically publishes a standard price for all three forms of a recipe). Not
   built now — needs its own design pass (does Offering get three price points,
   or something else?) — see [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md).
+
+## Correction (2026-10-18)
+
+Extra pricing is no longer a `per_length`-or-`flat` method choice — see
+[`0011-extra-rate-combines-flat-and-per-length.md`](0011-extra-rate-combines-flat-and-per-length.md).
+The per-tier scoping above is unchanged, just restated per-component: an
+Extra's **per-length charge** applies at every tier; its **flat charge**
+applies at `JOIN` only. An Extra may use either or both.

@@ -49,8 +49,9 @@ def pricing_context():
             "painted": FinishRate(base_rate_per_ft=2.0, marginal_rate_per_ft=1.0),
         },
         extra_rates={
-            "inlay": ExtraRate("per_length", 4.0),
-            "trim": ExtraRate("flat", 10.0),
+            "inlay": ExtraRate(per_length_charge=4.0),
+            "trim": ExtraRate(flat_charge=10.0),
+            "hardware kit": ExtraRate(flat_charge=6.0, per_length_charge=1.5),
         },
         joinery_rates={JoineryMethod.UNDERPINNING: 8.0, JoineryMethod.SPLINING: 24.0},
         chop_charge_per_frame=5.0,

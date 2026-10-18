@@ -73,23 +73,22 @@ def per_length_extras_cost(
     line: MouldingLineInput, billable_ft: float, pricing_context: PricingContext
 ) -> float:
     """Applies at every order form — a continuous inlay runs along the stick
-    whether it's cut or not. See docs/decisions/0009-*.md."""
+    whether it's cut or not. See docs/decisions/0009-*.md and 0011-*.md."""
     total = 0.0
     for extra in line.extras:
         rate = pricing_context.extra_rates[extra.name]
-        if rate.method == "per_length":
-            total += rate.value * billable_ft
+        total += rate.per_length_charge * billable_ft
     return total
 
 
 def flat_extras_cost(line: MouldingLineInput, pricing_context: PricingContext) -> float:
     """JOIN only — a flat extra (e.g. a hardware kit) typically describes
-    something about the finished, assembled piece. See docs/decisions/0009-*.md."""
+    something about the finished, assembled piece. See docs/decisions/0009-*.md
+    and 0011-*.md."""
     total = 0.0
     for extra in line.extras:
         rate = pricing_context.extra_rates[extra.name]
-        if rate.method == "flat":
-            total += rate.value
+        total += rate.flat_charge
     return total
 
 

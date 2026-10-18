@@ -72,15 +72,19 @@ stages are not collapsed.
   Finish/Extra/joinery rates; `stock_sizes.csv`, `lumber_prices.csv`,
   `moulding_lumber_sources.csv` for lumber sourcing).
 - Phase 3 (Finish / Extra): **settled** (first pass) — Finish as a small
-  controlled list of strings, no face-width scaling; Extra priced by its own
-  method (`per_length` | `flat`); both stored as hardcoded reference data
-  alongside lumber prices — see `docs/decisions/0004-finish-and-extra-pricing.md`.
-  Finish's pricing shape was later revised from flat-per-foot to a two-rate
-  model (base rate to the minimum footage, lower marginal rate beyond) — see
-  `docs/decisions/0008-finish-two-rate-pricing.md`. Open: whether Finish/Extra
-  use billable or required footage (a working assumption is recorded); whether
-  Extra's `per_length` pricing should get the same two-rate treatment; Extra ↔
-  Moulding compatibility constraints (explicitly deferred). **Implemented** —
+  controlled list of strings, no face-width scaling; Extra priced by two
+  independent components, a flat charge and a per-length charge, either or
+  both as needed; both stored as hardcoded reference data alongside lumber
+  prices — see `docs/decisions/0004-finish-and-extra-pricing.md`. Finish's
+  pricing shape was later revised from flat-per-foot to a two-rate model
+  (base rate to the minimum footage, lower marginal rate beyond) — see
+  `docs/decisions/0008-finish-two-rate-pricing.md`. Extra's pricing was later
+  revised again from an either/or method to the two-component shape above —
+  see `docs/decisions/0011-extra-rate-combines-flat-and-per-length.md`. Open:
+  whether Finish/Extra use billable or required footage (a working
+  assumption is recorded); whether an Extra's per-length charge should get
+  the same two-rate treatment; Extra ↔ Moulding compatibility constraints
+  (explicitly deferred). **Implemented** —
   see `backend/frameshop_pricing/`.
 - Phase 4 (Offering): **settled** (first pass) — Offering is a size-agnostic
   component recipe (no dimensions) carrying its own `menu_price_per_foot`,
@@ -118,9 +122,9 @@ stages are not collapsed.
   the wholesale-trade three-tier classification (raw stock / cut-not-joined /
   cut-and-joined), layered additively on the existing chain via `order_form`
   on `MouldingLineInput` (default `JOIN`, unchanged shop-mode behavior).
-  Offering pricing and `non_offering_labor_charge` scoped to `JOIN` only;
-  `flat` Extras `JOIN` only; `per_length` Extras, Finish, and tooling-work
-  labor apply at every tier — see
+  Offering pricing and `non_offering_labor_charge` scoped to `JOIN` only; an
+  Extra's flat charge applies `JOIN` only; its per-length charge, Finish, and
+  tooling-work labor apply at every tier — see
   `docs/decisions/0009-length-chop-join-order-form.md`. Open and *expected*
   follow-up: Offering getting its own Length/Chop price points. **Implemented**
   — see `backend/frameshop_pricing/engine.py`.

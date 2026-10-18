@@ -18,7 +18,7 @@ by length). More to be added later.
 # Responsibilities
 
 - Describe one optional embellishment / addition.
-- Declare **how it's priced** — see Pricing method below.
+- Declare **how it's priced** — see Pricing components below.
 
 ---
 
@@ -27,30 +27,34 @@ by length). More to be added later.
 Tentative. Not a schema.
 
 - **name / kind** (`"inlay"`, `"matching spacer"`, …)
-- **pricing method** — `per_length` | `flat` (see below)
-- **rate** — a $/foot value if `per_length`, or a flat $ amount if `flat`
+- **flat charge** — a fixed $ amount, 0 if unused (see below)
+- **per-length charge** — a $/foot rate, 0 if unused (see below)
 - a description or spec of the detail
 
 ---
 
-# Pricing method
+# Pricing components
 
-Every Extra is priced one of two ways — a property of the Extra itself, not a
-one-off rule per extra:
+**Settled (ADR 0011, revising ADR 0004's either/or `method`):** every Extra
+carries **two independent chargeable components**, not a choice between two
+kinds of Extra. Either may be zero — most Extras today only use one — but
+both can be set on the same Extra at once (e.g. a per-foot inlay rate plus a
+flat hardware/setup fee on one named Extra):
 
-- **`per_length`** — a rate per linear foot, applied to the same **billable
-  footage** used for the bare moulding material and Finish (working assumption
-  — see Open Questions). Both current extras (inlay, matching spacers) are this
-  kind. **Applies at every Length/Chop/Join order form** — a continuous inlay
-  runs along the stick whether it's cut or not.
-- **`flat`** — a single fixed charge regardless of size. **Applies at `JOIN`
-  only** — a flat extra typically describes something about the finished,
-  assembled piece (e.g. a hardware kit), which doesn't exist yet at Length or
-  Chop. See [`pricing.md`](pricing.md) and
+- **per-length charge** — a rate per linear foot, applied to the same
+  **billable footage** used for the bare moulding material and Finish
+  (working assumption — see Open Questions). Both current extras (inlay,
+  matching spacers) use this. **Applies at every Length/Chop/Join order
+  form** — a continuous inlay runs along the stick whether it's cut or not.
+- **flat charge** — a single fixed charge regardless of size. **Applies at
+  `JOIN` only** — a flat charge typically describes something about the
+  finished, assembled piece (e.g. a hardware kit), which doesn't exist yet
+  at Length or Chop. See [`pricing.md`](pricing.md) and
   [`../decisions/0009-length-chop-join-order-form.md`](../decisions/0009-length-chop-join-order-form.md).
 
-This keeps adding a new extra to a **data change** (add a row with a name,
-method, and rate) rather than a code change.
+This keeps adding a new extra, or adding a second charge to an existing one,
+a **data change** (set a flat amount, a per-foot rate, or both) rather than
+a code change.
 
 ---
 
@@ -71,8 +75,9 @@ method, and rate) rather than a code change.
 # Derived Values
 
 - **extra cost contribution** — sum over the DesignMoulding's Extras of
-  (`rate × billable footage` if `per_length`, else the flat `rate`). Derived,
-  not stored here.
+  (`per_length_charge × billable footage`) plus, at `JOIN` only, sum of
+  `flat_charge`. Both components can contribute from the same Extra.
+  Derived, not stored here.
 
 ---
 
@@ -95,13 +100,16 @@ requirement shared with Material and Finish — mechanism deferred.
 
 # Open Questions
 
-Mirrored in [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md):
+**Settled**: pricing is two independent components (flat + per-length), not
+a method choice — see
+[`../decisions/0011-extra-rate-combines-flat-and-per-length.md`](../decisions/0011-extra-rate-combines-flat-and-per-length.md).
+Mirrored in [`../OPEN_QUESTIONS.md`](../OPEN_QUESTIONS.md), still open:
 
 - **Moulding/Extra compatibility constraints** — real, but deliberately
   unimplemented for now. Needs a mechanism later (which Extras are valid for a
   given Moulding).
-- Does a `per_length` extra use the same billable footage as the bare material
-  and Finish? (Working assumption: yes — not confirmed.)
+- Does the per-length charge use the same billable footage as the bare
+  material and Finish? (Working assumption: yes — not confirmed.)
 
 **Settled**: any Extra difference from a source Offering's recipe breaks the
 exact match uniformly — there's no notion of some Extras preserving
