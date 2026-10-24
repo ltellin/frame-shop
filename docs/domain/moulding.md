@@ -126,20 +126,23 @@ here.
   fact, but a float frame's dimensions cannot be specified without it, so it
   lives on [`DesignMoulding`](design-moulding.md).
 
-### Reference only
+### Reference only (not a Moulding field)
 
-- **`diagram_path`** — a path/filename pointing at a cross-section diagram
-  (e.g. a Fusion 360 export), for visually matching a catalog entry to the
-  real profile. Purely reference metadata — the pricing engine never reads it,
-  and it isn't one of the "no material/finish/price" exclusions above because
-  it isn't a fabrication or pricing fact at all.
+- **diagram** — a cross-section SVG for visually matching a catalog entry to
+  the real profile, also used as its default UI thumbnail. **Settled (ADR
+  0012): not a stored field** — it's a file named `<id>.svg` in the
+  repo-root `diagrams/` directory, found by the Moulding's own `id`, nothing
+  else to keep in sync. Purely reference metadata either way — the pricing
+  engine never reads it. See
+  [`../decisions/0012-moulding-diagram-convention.md`](../decisions/0012-moulding-diagram-convention.md).
 
 ### Explicitly deferred
 
 - Detailed **profile shape** (curved, slanted, ogee, stepped, coved). For now the
   geometry is just the scalar dimensions above; a richer shape description comes
-  later and must not force a rewrite. `diagram_path` (above) is a stopgap for
-  visual identification in the meantime, not a structured shape description.
+  later and must not force a rewrite. The diagram convention (above) is a
+  stopgap for visual identification in the meantime, not a structured shape
+  description.
 
 ---
 
