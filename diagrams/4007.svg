@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 100 86" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g id="_0" serif:id="0" transform="matrix(1,0,0,1,4.88981,80.5936)">
+        <path id="POINT" d="M0,0L0.001,0.001" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="POINT1" serif:id="POINT" d="M0,-57.704L0.001,-57.703" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="POINT2" serif:id="POINT" d="M18,-75.704L18.001,-75.703" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="POINT3" serif:id="POINT" d="M90,-52.622L90.001,-52.621" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="POINT4" serif:id="POINT" d="M0,-57.704L0.001,-57.703" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="POINT5" serif:id="POINT" d="M18,-75.704L18.001,-75.703" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="LWPOLYLINE" d="M72,0L0,0L-0,-57.704C-0,-62.478 1.896,-67.056 5.272,-70.432C8.648,-73.807 13.226,-75.704 18,-75.704L40.5,-75.704L90,-52.622L90,-41.523L72,-41.523L72,0Z" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="LINE" d="M18,-75.704L22.5,-75.704" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="LINE1" serif:id="LINE" d="M22.5,-75.704L22.5,-66.704" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="LINE2" serif:id="LINE" d="M22.5,-66.704L31.5,-66.704" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="LINE3" serif:id="LINE" d="M31.5,-66.704L31.5,-75.704" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+    </g>
+</svg>

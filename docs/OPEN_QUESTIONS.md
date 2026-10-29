@@ -218,6 +218,11 @@ Still open:
 ## Catalog / vendor / lumber
 
 44. Which catalog attributes are common to all products vs category-specific?
+    For Moulding specifically, its diagram is **settled**: not a stored
+    attribute at all, a file found by id — see
+    [`decisions/0012-moulding-diagram-convention.md`](decisions/0012-moulding-diagram-convention.md).
+    Still open for catalog attributes generally, and for other product
+    types once they exist.
 45. How is **catalog / lumber reference data** kept separate from **transaction
     history** so price / availability changes never alter past orders?
 46. How is catalog and lumber-price data loaded and updated (hand-edited file,

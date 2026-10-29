@@ -20,6 +20,7 @@ Records so far:
 - [`0009-length-chop-join-order-form.md`](0009-length-chop-join-order-form.md)
 - [`0010-moulding-lumber-sources-as-tables.md`](0010-moulding-lumber-sources-as-tables.md)
 - [`0011-extra-rate-combines-flat-and-per-length.md`](0011-extra-rate-combines-flat-and-per-length.md)
+- [`0012-moulding-diagram-convention.md`](0012-moulding-diagram-convention.md)
 
 ## When to add a record
 
