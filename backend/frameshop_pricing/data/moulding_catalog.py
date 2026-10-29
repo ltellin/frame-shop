@@ -2,10 +2,13 @@
 integer ID.
 
 Add your mouldings here directly, one per ID — the `id=` field must match the
-dict key (checked below at import time). `diagram_path` is just a reference
-string (e.g. a path to your Fusion 360 cross-section export) — the pricing
-engine never reads it, it's purely for visually matching a catalog entry to
-the real profile.
+dict key (checked below at import time).
+
+Each entry's diagram (a cross-section SVG, for visually matching a catalog
+entry to the real profile) is **not** a field here — it's a file named
+`<id>.svg` in the repo-root `diagrams/` directory (outside the installed
+package; a catalog id is all that's needed to find it). See
+docs/decisions/0012-moulding-diagram-convention.md.
 
 Which lumber stock each moulding is milled from (thickness x width, per
 milling orientation) is **not** set here — see data/moulding_lumber_sources.csv
@@ -36,7 +39,6 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.1,
         rabbet_depth_in=0.25,
         rabbet_height_in=0.375,
-        diagram_path="diagrams/1001-square.png",  # placeholder — point at your real export
     ),
     1002: Moulding(
         id=1002,
@@ -48,7 +50,6 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.1,
         rabbet_depth_in=0.25,
         rabbet_height_in=1.625,
-        diagram_path="diagrams/1002-square-tall.png",  # placeholder — point at your real export
     ),
     2001: Moulding(
         id=2001,
@@ -60,7 +61,6 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.1,
         rabbet_depth_in=0.25,
         rabbet_height_in=0.375,
-        diagram_path="diagrams/2001-square.png",  # placeholder — point at your real export
     ),
     2002: Moulding(
         id=2002,
@@ -72,7 +72,6 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.1,
         rabbet_depth_in=0.25,
         rabbet_height_in=1.625,
-        diagram_path="diagrams/2002-square-tall.png",
     ),
     2003: Moulding(
         id=2003,
@@ -84,7 +83,6 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.25,
         rabbet_depth_in=0.25,
         rabbet_height_in=0.375,
-        diagram_path="diagrams/2003-slant.png",
     ),
     2004: Moulding(
         id=2004,
@@ -96,7 +94,6 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.25,
         rabbet_depth_in=0.25,
         rabbet_height_in=1.625,
-        diagram_path="diagrams/2004-slant-tall.png",
     ),
     2005: Moulding(
         id=2005,
@@ -108,7 +105,6 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.25,
         rabbet_depth_in=0.25,
         rabbet_height_in=0.375,
-        diagram_path="diagrams/2005-rounded-slant.png",
     ),
     2006: Moulding(
         id=2006,
@@ -120,7 +116,17 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.25,
         rabbet_depth_in=0.25,
         rabbet_height_in=1.625,
-        diagram_path="diagrams/2006-rounded-slant-tall.png",
+    ),
+    2020: Moulding(
+        id=2020,
+        name='3/4" double slant',
+        type=MouldingType.STANDARD,
+        face_width_in=0.75,
+        overall_height_in=1.75,
+        tooling_work=5,
+        waste_factor=1.25,
+        rabbet_depth_in=0.25,
+        rabbet_height_in=1.625,
     ),
     # --- 3000s: 1" wide versions of the 2000s — same heights/tooling/waste,
     # just a wider face, milled from 5/4 S4S (1-1/16") stock ---
@@ -134,7 +140,6 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.1,
         rabbet_depth_in=0.25,
         rabbet_height_in=0.375,
-        diagram_path="diagrams/3001-square.png",
     ),
     3002: Moulding(
         id=3002,
@@ -146,7 +151,6 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.1,
         rabbet_depth_in=0.25,
         rabbet_height_in=1.625,
-        diagram_path="diagrams/3002-square-tall.png",
     ),
     3003: Moulding(
         id=3003,
@@ -158,7 +162,6 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.25,
         rabbet_depth_in=0.25,
         rabbet_height_in=0.375,
-        diagram_path="diagrams/3003-slant.png",
     ),
     3004: Moulding(
         id=3004,
@@ -170,7 +173,6 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.25,
         rabbet_depth_in=0.25,
         rabbet_height_in=1.625,
-        diagram_path="diagrams/3004-slant-tall.png",
     ),
     3005: Moulding(
         id=3005,
@@ -182,7 +184,6 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.25,
         rabbet_depth_in=0.25,
         rabbet_height_in=0.375,
-        diagram_path="diagrams/3005-rounded-slant.png",
     ),
     3006: Moulding(
         id=3006,
@@ -194,10 +195,9 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.25,
         rabbet_depth_in=0.25,
         rabbet_height_in=1.625,
-        diagram_path="diagrams/3006-rounded-slant-tall.png",
     ),
-    4001: Moulding(
-        id=4001,
+    4007: Moulding(
+        id=4007,
         name='outside round inside slant',
         type=MouldingType.STANDARD,
         face_width_in=1.25,
@@ -206,7 +206,6 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.25,
         rabbet_depth_in=0.25,
         rabbet_height_in=0.5,
-        diagram_path="diagrams/4001-outside-round-inside-slant.png",
     ),
     5001: Moulding(
         id=5001,
@@ -214,11 +213,10 @@ MOULDINGS: dict[int, Moulding] = {
         type=MouldingType.STANDARD,
         face_width_in=1.75,
         overall_height_in=.75,
-        tooling_work=3,
+        tooling_work=2,
         waste_factor=1.25,
         rabbet_depth_in=0.25,
         rabbet_height_in=0.625,
-        diagram_path="diagrams/5001-slant.png",
     ),
     5002: Moulding(
         id=5002,
@@ -230,7 +228,6 @@ MOULDINGS: dict[int, Moulding] = {
         waste_factor=1.25,
         rabbet_depth_in=0.25,
         rabbet_height_in=0.625,
-        diagram_path="diagrams/5002-outside-scoop-inside-bevel.png",
     ),
 }
 

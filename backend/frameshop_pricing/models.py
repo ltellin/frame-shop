@@ -81,11 +81,6 @@ class Moulding:
     internal_height_in: float | None = None
     float_board_thickness_in: float | None = None
 
-    # Reference only — never read by the pricing engine. A path/filename
-    # pointing at a cross-section diagram (e.g. a Fusion 360 export), for
-    # visually matching a catalog entry to the real profile.
-    diagram_path: str | None = None
-
     def __post_init__(self) -> None:
         if self.tooling_work not in (1, 2, 3, 5, 8):
             raise ValueError(f"tooling_work must be one of 1/2/3/5/8, got {self.tooling_work!r}")

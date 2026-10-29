@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 140 68" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g id="_0" serif:id="0" transform="matrix(1,0,0,1,6.68976,60.6898)">
+        <path id="POINT" d="M0,0L0.001,0.001" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="LINE" d="M0,0L108,0" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="LINE1" serif:id="LINE" d="M108,0L108,-36" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="LINE2" serif:id="LINE" d="M108,-36L126,-36" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="LINE3" serif:id="LINE" d="M126,-36L126,-45" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="LINE4" serif:id="LINE" d="M0,0L0,-27" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="LINE5" serif:id="LINE" d="M99,-54L126,-45" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+        <path id="SPLINE" d="M0,-27C1.268,-26.974 2.396,-26.953 3.923,-26.932C5.197,-26.915 6.308,-26.903 7.811,-26.893C9.067,-26.886 10.161,-26.882 11.641,-26.884C12.876,-26.887 13.954,-26.892 15.41,-26.906C16.626,-26.918 17.686,-26.932 19.119,-26.958C20.315,-26.981 21.358,-27.003 22.766,-27.041C23.942,-27.074 24.967,-27.106 26.351,-27.156C27.506,-27.199 28.513,-27.24 29.872,-27.303C31.006,-27.357 31.995,-27.407 33.328,-27.483C34.44,-27.548 35.41,-27.607 36.716,-27.697C37.807,-27.773 38.757,-27.842 40.037,-27.945C41.105,-28.032 42.035,-28.112 43.286,-28.229C44.331,-28.328 45.24,-28.418 46.464,-28.55C47.484,-28.661 48.372,-28.761 49.566,-28.908C51.537,-29.153 53.254,-29.384 55.519,-29.739C57.407,-30.039 59.031,-30.317 61.166,-30.738C62.944,-31.093 64.47,-31.42 66.468,-31.91C68.131,-32.323 69.555,-32.702 71.409,-33.265C72.951,-33.738 74.269,-34.171 75.974,-34.809C77.393,-35.345 78.601,-35.833 80.156,-36.546C81.449,-37.146 82.546,-37.69 83.952,-38.479C85.12,-39.142 86.108,-39.741 87.366,-40.604C88.411,-41.329 89.291,-41.983 90.405,-42.919C91.329,-43.705 92.105,-44.411 93.079,-45.418C93.886,-46.263 94.56,-47.021 95.396,-48.097C96.089,-49 96.663,-49.808 97.365,-50.952C97.945,-51.911 98.422,-52.768 98.991,-53.98" style="fill:none;stroke:black;stroke-width:0.71px;"/>
+    </g>
+</svg>
