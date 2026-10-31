@@ -19,11 +19,11 @@ from ..models import ExtraRate, FinishRate, JoineryMethod
 # Finish name -> two-rate pricing. base_rate_per_ft covers the shop's minimum
 # footage (setup/cleanup labor dominates a small job); marginal_rate_per_ft
 # (lower) applies to footage beyond that minimum. Never scales with face
-# width. See docs/decisions/0008-finish-two-rate-pricing.md. EXAMPLE VALUES.
+# width. See docs/decisions/0008-finish-two-rate-pricing.md.
 FINISH_RATES: dict[str, FinishRate] = {
-    "oil": FinishRate(base_rate_per_ft=1.50, marginal_rate_per_ft=0.75),
-    "painted": FinishRate(base_rate_per_ft=3.00, marginal_rate_per_ft=1.25),
-    "stained": FinishRate(base_rate_per_ft=2.00, marginal_rate_per_ft=1.00),
+    "oil": FinishRate(base_rate_per_ft=25.00, marginal_rate_per_ft=2.00),
+    "painted": FinishRate(base_rate_per_ft=45.00, marginal_rate_per_ft=2.00),
+    "stained": FinishRate(base_rate_per_ft=35.00, marginal_rate_per_ft=2.00),
 }
 
 # Extra name -> rate. flat_charge is added once per frame (JOIN only);
